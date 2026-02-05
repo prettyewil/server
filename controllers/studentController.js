@@ -1,4 +1,3 @@
-const Room = require('../models/Room');
 const User = require('../models/User');
 const { logAction } = require('../utils/logger');
 const bcrypt = require('bcryptjs');
@@ -27,15 +26,6 @@ const createStudent = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Lookup Room Number if room_id provided
-        let roomNumber = 'N/A';
-        if (room_id) {
-            const room = await Room.findById(room_id);
-            if (room) {
-                roomNumber = room.roomNumber;
-            }
-        }
-
         // Generate default password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash('password123', salt); // Default password
@@ -45,10 +35,8 @@ const createStudent = async (req, res) => {
             email,
             password: hashedPassword,
             role: 'student',
-            studentId: student_id,
             studentProfile: {
-                room_id: room_id || null, // Save ID reference if schema supports it, otherwise just number
-                roomNumber: roomNumber,
+                roomNumber: 'N/A', // logic to fetch room number from ID needed if strict
                 status: status || 'inactive'
             }
         });
@@ -74,26 +62,15 @@ const updateStudent = async (req, res) => {
 
         user.name = `${req.body.first_name || user.name.split(' ')[0]} ${req.body.last_name || user.name.split(' ')[1]}`;
         user.email = req.body.email || user.email;
-        if (req.body.student_id) user.studentId = req.body.student_id;
 
         if (user.studentProfile) {
-            // Room Update Logic
-            if (req.body.room_id) {
-                const room = await Room.findById(req.body.room_id);
-                if (room) {
-                    user.studentProfile.roomNumber = room.roomNumber;
-                    // Optional: Store ID if you added it to schema, otherwise just number
-                    user.studentProfile.room_id = room._id;
-                }
-            }
-
             user.studentProfile.status = req.body.status || user.studentProfile.status;
 
             // Sync user account status with profile status
             if (user.studentProfile.status === 'active') {
                 user.status = 'approved';
             } else if (user.studentProfile.status === 'inactive') {
-                user.status = 'pending';
+                user.status = 'pending'; // or 'rejected' depending on preference, but pending disables login effectively
             }
 
             // Update other fields as needed

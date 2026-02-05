@@ -1,28 +1,7 @@
 const mongoose = require('mongoose');
-const User = require('./models/User'); // Adjust path as needed
-const { updateStudent, createStudent } = require('./controllers/studentController'); // We might need to mock req/res
+const User = require('./models/User'); // Adjusted path for running inside server/
 
-// Mock Express Request/Response
-const mockReq = (body = {}, params = {}, user = {}) => ({
-    body,
-    params,
-    user
-});
-
-const mockRes = () => {
-    const res = {};
-    res.status = (code) => {
-        res.statusCode = code;
-        return res;
-    };
-    res.json = (data) => {
-        res.data = data;
-        return res;
-    };
-    return res;
-};
-
-require('dotenv').config({ path: './server/.env' });
+require('dotenv').config(); // Adjusted for running inside server/
 
 async function runVerification() {
     try {
@@ -41,8 +20,8 @@ async function runVerification() {
         });
         await newStudent.save();
 
-        console.log('Created Student Status:', newStudent.status); // Should be 'pending' (from User model default)
-        console.log('Created Profile Status:', newStudent.studentProfile.status); // Should be 'inactive' (from my change)
+        console.log('Created Student Status:', newStudent.status); // Should be 'pending'
+        console.log('Created Profile Status:', newStudent.studentProfile.status); // Should be 'inactive'
 
         if (newStudent.status === 'pending' && newStudent.studentProfile.status === 'inactive') {
             console.log('✅ Default status check PASSED');
@@ -53,25 +32,6 @@ async function runVerification() {
         // 2. Test Controller Update Logic (Sync)
         console.log('\n--- Test 2: Admin Approval Sync ---');
 
-        // Mock Admin User
-        const adminUser = { id: 'admin_id_placeholder', role: 'admin' };
-
-        // Simulate switching to ACTIVE
-        const reqActivate = mockReq({ status: 'active' }, { id: newStudent._id }, adminUser);
-        const resActivate = mockRes();
-
-        // We need to invoke the controller logic. 
-        // Since controller uses `logAction`, we might need to mock that or ensure it doesn't crash.
-        // For simplicity, let's just use the Code we wrote logic directly or rely on the fact that I can't easily import the controller if it has side effects like require('../utils/logger').
-        // Let's re-read the file to see if I can import it safely.
-        // It imports logger. Logger might fail if not set up?
-        // Let's just manually update the document using the SAME LOGIC as the controller to verify mongoose behavior locally, 
-        // OR better yet, let's try to actually run the controller function if possible.
-
-        // Actually, the safest way is to just manipulate the DB document using the logic I wrote to ensure it works as expected 
-        // because I can't easily mock the dependencies of the controller in a simple script without a test runner.
-
-        // RE-FETCH to be sure
         let user = await User.findById(newStudent._id);
 
         // SIMULATE CONTROLLER LOGIC
