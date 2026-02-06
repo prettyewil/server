@@ -12,11 +12,26 @@ const getAdminStats = async (req, res) => {
         const overduePayments = await Payment.countDocuments({ status: 'overdue' });
         const pendingCleaning = 0; // Mock data as requested
 
+        // Fetch recent announcements
+        const recentAnnouncements = await require('../models/Announcement').find().sort({ createdAt: -1 }).limit(3);
+
+        // Fetch urgent or recent maintenance requests
+        const urgentMaintenance = await MaintenanceRequest.find({
+            status: { $ne: 'resolved' }
+        })
+            .populate('student', 'name studentProfile.roomNumber')
+            .sort({ urgency: -1, createdAt: -1 }) // High urgency first
+            .limit(5);
+
         res.status(200).json({
-            totalStudents,
-            pendingMaintenance,
-            pendingCleaning,
-            overduePayments,
+            stats: {
+                totalStudents,
+                pendingMaintenance,
+                pendingCleaning,
+                overduePayments,
+            },
+            recentAnnouncements,
+            urgentMaintenance
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -68,9 +68,33 @@ const updateRequestStatus = async (req, res) => {
     }
 };
 
+// @desc    Delete a maintenance request
+// @route   DELETE /api/maintenance/:id
+// @access  Private (Admin)
+const deleteRequest = async (req, res) => {
+    try {
+        const request = await MaintenanceRequest.findById(req.params.id);
+
+        if (!request) {
+            return res.status(404).json({ message: 'Request not found' });
+        }
+
+        // Check ownership if student
+        if (req.user.role === 'student' && request.student.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to delete this request' });
+        }
+
+        await request.deleteOne();
+        res.status(200).json({ message: 'Request removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getMaintenanceRequests,
     getMyRequests,
     createRequest,
     updateRequestStatus,
+    deleteRequest,
 };

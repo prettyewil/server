@@ -1,4 +1,5 @@
 const Room = require('../models/Room');
+const User = require('../models/User');
 
 // @desc    Get all rooms
 // @route   GET /api/rooms
@@ -6,7 +7,20 @@ const Room = require('../models/Room');
 const getRooms = async (req, res) => {
     try {
         const rooms = await Room.find().sort({ roomNumber: 1 });
-        res.json(rooms);
+
+        // Aggregate student counts
+        const roomsWithCounts = await Promise.all(rooms.map(async (room) => {
+            const count = await User.countDocuments({
+                'studentProfile.roomNumber': room.roomNumber,
+                'studentProfile.status': 'active' // Optional: only count active students? Assuming active usually.
+            });
+            return {
+                ...room.toObject(),
+                students_count: count
+            };
+        }));
+
+        res.json(roomsWithCounts);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

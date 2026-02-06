@@ -4,7 +4,43 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { logAction } = require('../utils/logger');
 
+const nodemailer = require('nodemailer');
+
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Email Transporter
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
+
+const sendOTPEmail = async (email, otp) => {
+    const mailOptions = {
+        from: `"DormSync" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'DormSync Verification OTP',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+                <h2 style="color: #001F3F; text-align: center;">Verify Your Account</h2>
+                <p style="color: #555; font-size: 16px;">Hello,</p>
+                <p style="color: #555; font-size: 16px;">Use the following OTP to verify your DormSync account. This code is valid for 10 minutes.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #001F3F; background-color: #f4f4f4; padding: 10px 20px; border-radius: 5px;">${otp}</span>
+                </div>
+                <p style="color: #555; font-size: 14px; text-align: center;">If you didn't request this, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="color: #999; font-size: 12px; text-align: center;">&copy; ${new Date().getFullYear()} DormSync. All rights reserved.</p>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+};
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -13,7 +49,7 @@ const generateToken = (id) => {
     });
 };
 
-// @desc    Register a new user
+// @desc    Register a new user (Step 1: Create Account & Send OTP)
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
@@ -23,12 +59,34 @@ const registerUser = async (req, res) => {
         const userExists = await User.findOne({ email });
 
         if (userExists) {
+            // If user exists but is unverified, resend OTP
+            if (userExists.status === 'unverified') {
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                userExists.otp = otp;
+                userExists.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+                // Update details if changed (optional, but good for retries)
+                userExists.name = name;
+                userExists.password = await bcrypt.hash(password, await bcrypt.genSalt(10));
+
+                await userExists.save();
+                await sendOTPEmail(email, otp);
+
+                return res.status(200).json({
+                    message: 'Account exists but unverified. New OTP sent.',
+                    email: userExists.email
+                });
+            }
             return res.status(400).json({ message: 'User already exists' });
         }
 
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
         // Create user
         const user = await User.create({
@@ -38,26 +96,80 @@ const registerUser = async (req, res) => {
             role,
             studentId: role === 'student' ? studentId : undefined,
             studentProfile: role === 'student' ? studentProfile : undefined,
-            status: role === 'admin' ? 'approved' : 'pending' // Admins auto-approved (if seeded), students pending
+            status: role === 'admin' ? 'approved' : 'unverified', // Students need OTP
+            otp: role === 'admin' ? undefined : otp,
+            otpExpires: role === 'admin' ? undefined : otpExpires
         });
 
         if (user) {
-            // Do NOT generate token here for Pending users.
-            // Just return success message.
-            res.status(201).json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                status: user.status,
-                message: 'Registration successful. Please wait for admin approval.'
-            });
+            if (role === 'student') {
+                await sendOTPEmail(email, otp);
+                res.status(201).json({
+                    message: 'Registration successful. OTP sent to email.',
+                    email: user.email,
+                    status: 'unverified'
+                });
+            } else {
+                res.status(201).json({
+                    _id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    status: user.status,
+                    message: 'Admin registered successfully.'
+                });
+            }
 
-            await logAction(user.id, 'REGISTER', 'User registered (Pending Approval)', req);
+            await logAction(user.id, 'REGISTER', 'User registered (Unverified)', req);
 
         } else {
             res.status(400).json({ message: 'Invalid user data' });
         }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const user = await User.findOne({
+            email,
+            otp,
+            otpExpires: { $gt: Date.now() }
+        }).select('+otp +otpExpires'); // Explicitly select these fields
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        user.status = 'active'; // No more 'approved' needed, direct to active
+        user.otp = undefined;
+        user.otpExpires = undefined;
+
+        // Ensure student profile is active
+        if (user.studentProfile) {
+            user.studentProfile.status = 'active';
+        }
+
+        await user.save();
+
+        res.json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            token: generateToken(user.id),
+            studentProfile: user.studentProfile,
+            message: 'Email verified successfully'
+        });
+
+        await logAction(user.id, 'VERIFY_OTP', 'User verified email via OTP', req);
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -88,6 +200,7 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 token: generateToken(user.id),
+                studentProfile: user.studentProfile
             });
 
             await logAction(user.id, 'LOGIN', 'User logged in', req);
@@ -222,6 +335,7 @@ const googleLogin = async (req, res) => {
             email: user.email,
             role: user.role,
             token: generateToken(user.id),
+            studentProfile: user.studentProfile
         });
 
         // Log Google login
@@ -236,5 +350,6 @@ module.exports = {
     loginUser,
     googleLogin,
     getMe,
-    updateProfile
+    updateProfile,
+    verifyOTP
 };

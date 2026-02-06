@@ -17,7 +17,7 @@ const paymentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'paid', 'overdue'],
+        enum: ['pending', 'paid', 'overdue', 'verified', 'submitted'],
         default: 'pending',
     },
     dueDate: {
@@ -28,6 +28,9 @@ const paymentSchema = new mongoose.Schema({
         type: Date,
     },
     notes: {
+        type: String,
+    },
+    receiptUrl: {
         type: String,
     },
 }, { timestamps: true });

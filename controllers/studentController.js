@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Room = require('../models/Room');
 const { logAction } = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 
@@ -26,6 +27,15 @@ const createStudent = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        // Fetch room details if room_id is provided
+        let roomNumber = 'N/A';
+        if (room_id) {
+            const room = await Room.findById(room_id);
+            if (room) {
+                roomNumber = room.roomNumber;
+            }
+        }
+
         // Generate default password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash('password123', salt); // Default password
@@ -35,8 +45,9 @@ const createStudent = async (req, res) => {
             email,
             password: hashedPassword,
             role: 'student',
+            studentId: student_id,
             studentProfile: {
-                roomNumber: 'N/A', // logic to fetch room number from ID needed if strict
+                roomNumber: roomNumber,
                 status: status || 'inactive'
             }
         });
@@ -63,8 +74,21 @@ const updateStudent = async (req, res) => {
         user.name = `${req.body.first_name || user.name.split(' ')[0]} ${req.body.last_name || user.name.split(' ')[1]}`;
         user.email = req.body.email || user.email;
 
+        // Update user.studentId if provided (and maybe check uniqueness if not handled by mongoose)
+        if (req.body.student_id) {
+            user.studentId = req.body.student_id;
+        }
+
         if (user.studentProfile) {
             user.studentProfile.status = req.body.status || user.studentProfile.status;
+
+            // Update Room if room_id provided
+            if (req.body.room_id) {
+                const room = await Room.findById(req.body.room_id);
+                if (room) {
+                    user.studentProfile.roomNumber = room.roomNumber;
+                }
+            }
 
             // Sync user account status with profile status
             if (user.studentProfile.status === 'active') {
@@ -74,6 +98,7 @@ const updateStudent = async (req, res) => {
             }
 
             // Update other fields as needed
+            if (req.body.phone_number) user.studentProfile.phoneNumber = req.body.phone_number;
         }
 
         const updatedUser = await user.save();

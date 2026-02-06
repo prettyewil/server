@@ -43,8 +43,16 @@ const userSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
-        default: 'pending' // pending by default for everyone (except seeded admins theoretically)
+        enum: ['pending', 'approved', 'rejected', 'unverified', 'active'],
+        default: 'pending'
+    },
+    otp: {
+        type: String,
+        select: false // Do not return by default
+    },
+    otpExpires: {
+        type: Date,
+        select: false
     }
 }, { timestamps: true });
 
