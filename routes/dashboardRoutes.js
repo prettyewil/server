@@ -4,7 +4,7 @@ const { getAdminStats, getStudentStats } = require('../controllers/dashboardCont
 const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 
-router.get('/admin/stats', protect, restrictTo('admin'), getAdminStats);
+router.get('/admin/stats', protect, restrictTo('admin', 'manager', 'super_admin', 'staff'), getAdminStats);
 router.get('/student/stats', protect, restrictTo('student'), getStudentStats);
 
 module.exports = router;

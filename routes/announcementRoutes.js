@@ -5,6 +5,6 @@ const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 
 router.get('/', protect, getAnnouncements);
-router.post('/', protect, restrictTo('admin'), createAnnouncement);
+router.post('/', protect, restrictTo('admin', 'manager', 'super_admin'), createAnnouncement);
 
 module.exports = router;

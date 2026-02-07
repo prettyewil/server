@@ -39,6 +39,7 @@ const sendOTPEmail = async (email, otp) => {
         `
     };
 
+    console.log(`[DEV] OTP for ${email}: ${otp}`); // For testing purposes
     await transporter.sendMail(mailOptions);
 };
 
@@ -53,7 +54,8 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = async (req, res) => {
-    const { name, email, password, role, studentProfile, studentId } = req.body;
+    // name is now optional/virtual, we expect parts
+    const { firstName, lastName, middleInitial, name, email, password, role, studentProfile, studentId } = req.body;
 
     try {
         const userExists = await User.findOne({ email });
@@ -66,7 +68,16 @@ const registerUser = async (req, res) => {
                 userExists.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
                 // Update details if changed (optional, but good for retries)
-                userExists.name = name;
+                if (firstName) userExists.firstName = firstName;
+                if (lastName) userExists.lastName = lastName;
+                if (middleInitial) userExists.middleInitial = middleInitial;
+                // Fallback if old 'name' passed
+                if (!firstName && name) {
+                    const parts = name.split(' ');
+                    userExists.firstName = parts[0];
+                    userExists.lastName = parts.slice(1).join(' ');
+                }
+
                 userExists.password = await bcrypt.hash(password, await bcrypt.genSalt(10));
 
                 await userExists.save();
@@ -88,40 +99,40 @@ const registerUser = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
+        // Handle name splitting if only old 'name' is provided
+        let fName = firstName;
+        let lName = lastName;
+
+        if (!fName && name) {
+            const parts = name.split(' ');
+            fName = parts[0];
+            lName = parts.slice(1).join(' ') || '.'; // Fallback dot if no last name
+        }
+
         // Create user
         const user = await User.create({
-            name,
+            firstName: fName,
+            lastName: lName,
+            middleInitial,
             email,
             password: hashedPassword,
             role,
             studentId: role === 'student' ? studentId : undefined,
             studentProfile: role === 'student' ? studentProfile : undefined,
-            status: role === 'admin' ? 'approved' : 'unverified', // Students need OTP
-            otp: role === 'admin' ? undefined : otp,
-            otpExpires: role === 'admin' ? undefined : otpExpires
+            status: 'unverified', // All new registrations (except explicit admin creates) need OTP
+            otp,
+            otpExpires
         });
 
         if (user) {
-            if (role === 'student') {
-                await sendOTPEmail(email, otp);
-                res.status(201).json({
-                    message: 'Registration successful. OTP sent to email.',
-                    email: user.email,
-                    status: 'unverified'
-                });
-            } else {
-                res.status(201).json({
-                    _id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    status: user.status,
-                    message: 'Admin registered successfully.'
-                });
-            }
+            await sendOTPEmail(email, otp);
+            res.status(201).json({
+                message: 'Registration successful. OTP sent to email.',
+                email: user.email,
+                status: 'unverified'
+            });
 
-            await logAction(user.id, 'REGISTER', 'User registered (Unverified)', req);
-
+            await logAction(user.id, 'REGISTER', `User registered as ${role} (Unverified)`, req);
         } else {
             res.status(400).json({ message: 'Invalid user data' });
         }
@@ -130,8 +141,91 @@ const registerUser = async (req, res) => {
     }
 };
 
-// @desc    Verify OTP
-// @route   POST /api/auth/verify-otp
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        await user.save();
+        await sendOTPEmail(email, otp);
+
+        res.json({ message: 'OTP sent to your email.' });
+        await logAction(user.id, 'FORGOT_PASSWORD', 'Requested password reset OTP', req);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    try {
+        const user = await User.findOne({
+            email,
+            otp,
+            otpExpires: { $gt: Date.now() }
+        }).select('+otp +otpExpires');
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        user.otp = undefined;
+        user.otpExpires = undefined;
+
+        await user.save();
+
+        res.json({ message: 'Password reset successful. Please login.' });
+        await logAction(user.id, 'RESET_PASSWORD', 'Password reset successfully', req);
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Verify Reset OTP (Check only)
+// @route   POST /api/auth/verify-reset-otp
+// @access  Public
+const verifyResetOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const user = await User.findOne({
+            email,
+            otp,
+            otpExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        res.json({ message: 'OTP verified' });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Verify OTP (Registration)
 // @access  Public
 const verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
@@ -147,7 +241,13 @@ const verifyOTP = async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        user.status = 'active'; // No more 'approved' needed, direct to active
+        // Set status based on role
+        if (user.role === 'staff') {
+            user.status = 'pending'; // Staff needs admin approval
+        } else {
+            user.status = 'active'; // Students auto-activate (or 'pending' if you want admin approval for students too)
+        }
+
         user.otp = undefined;
         user.otpExpires = undefined;
 
@@ -158,15 +258,22 @@ const verifyOTP = async (req, res) => {
 
         await user.save();
 
-        res.json({
+        const response = {
             _id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateToken(user.id),
+            role: user.role,
             studentProfile: user.studentProfile,
+            studentId: user.studentId,
             message: 'Email verified successfully'
-        });
+        };
+
+        if (user.status === 'active') {
+            response.token = generateToken(user.id);
+        }
+
+        res.json(response);
 
         await logAction(user.id, 'VERIFY_OTP', 'User verified email via OTP', req);
 
@@ -182,30 +289,45 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        // user could adhere to either email address or student ID
+        // The frontend sends 'email' field but it could be student ID
+        const identifier = email;
+
+        const user = await User.findOne({
+            $or: [
+                { email: identifier.toLowerCase() },
+                { studentId: identifier }
+            ]
+        });
 
         if (user && (await bcrypt.compare(password, user.password))) {
 
-            if (user.role !== 'admin' && user.status === 'pending') {
+            const allowedRoles = ['admin', 'manager', 'super_admin'];
+
+            if (!allowedRoles.includes(user.role) && user.status === 'pending') {
                 return res.status(403).json({ message: 'Account is pending approval. Please wait for admin confirmation.' });
             }
 
-            if (user.role !== 'admin' && user.status === 'rejected') {
+            if (!allowedRoles.includes(user.role) && user.status === 'rejected') {
                 return res.status(403).json({ message: 'Account has been rejected. Contact admin.' });
             }
 
             res.json({
                 _id: user.id,
                 name: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleInitial: user.middleInitial,
                 email: user.email,
                 role: user.role,
                 token: generateToken(user.id),
-                studentProfile: user.studentProfile
+                studentProfile: user.studentProfile,
+                studentId: user.studentId
             });
 
             await logAction(user.id, 'LOGIN', 'User logged in', req);
         } else {
-            res.status(401).json({ message: 'Invalid email or password' });
+            res.status(401).json({ message: 'Invalid email/student ID or password' });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -216,15 +338,20 @@ const loginUser = async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = async (req, res) => {
-    const { _id, name, email, role, studentProfile, status } = await User.findById(req.user.id);
+    // 2024-02-07: Modified to include studentId and name parts
+    const { _id, name, firstName, lastName, middleInitial, email, role, studentProfile, status, studentId } = await User.findById(req.user.id);
 
     res.status(200).json({
         id: _id,
         name,
+        firstName,
+        lastName,
+        middleInitial,
         email,
         role,
         studentProfile,
-        status
+        status,
+        studentId
     });
 };
 
@@ -239,8 +366,27 @@ const updateProfile = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user.name = req.body.name || user.name;
+        if (req.body.firstName) user.firstName = req.body.firstName;
+        if (req.body.lastName) user.lastName = req.body.lastName;
+        if (req.body.middleInitial) user.middleInitial = req.body.middleInitial;
+
+        // Handle full name update from frontend
+        if (req.body.name) {
+            const parts = req.body.name.split(' ');
+            if (parts.length > 0) {
+                user.firstName = parts[0];
+                if (parts.length > 1) {
+                    user.lastName = parts.slice(1).join(' ');
+                }
+            }
+        }
+
         user.email = req.body.email || user.email;
+
+        // Update Student ID if provided
+        if (req.body.studentId) {
+            user.studentId = req.body.studentId;
+        }
 
         // If password is being updated
         if (req.body.password) {
@@ -257,13 +403,20 @@ const updateProfile = async (req, res) => {
 
         const updatedUser = await user.save();
 
+        console.log('Updated User:', {
+            id: updatedUser.id,
+            studentId: updatedUser.studentId,
+            studentProfile: updatedUser.studentProfile
+        });
+
         res.json({
             _id: updatedUser.id,
             name: updatedUser.name,
             email: updatedUser.email,
             role: updatedUser.role,
-            token: generateToken(updatedUser.id), // Re-issue token if needed (optional)
-            studentProfile: updatedUser.studentProfile
+            // token: generateToken(updatedUser.id), // Do not re-issue token to avoid sync issues
+            studentProfile: updatedUser.studentProfile,
+            studentId: updatedUser.studentId
         });
 
         await logAction(updatedUser.id, 'UPDATE_PROFILE', 'User updated profile', req);
@@ -285,7 +438,7 @@ const googleLogin = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
-        const { name, email, picture } = ticket.getPayload();
+        const { name, email, picture, given_name, family_name } = ticket.getPayload();
 
         let user = await User.findOne({ email });
 
@@ -297,7 +450,9 @@ const googleLogin = async (req, res) => {
             const hashedPassword = await bcrypt.hash(password, salt);
 
             user = await User.create({
-                name,
+                firstName: given_name || name.split(' ')[0],
+                lastName: family_name || name.split(' ').slice(1).join(' ') || '.',
+                // name: name, // Handled by pre-save
                 email,
                 password: hashedPassword,
                 role: 'student', // Default role for NEW Google users
@@ -315,8 +470,9 @@ const googleLogin = async (req, res) => {
             });
         }
 
-        // Allow Admins to bypass pending/rejected checks
-        if (user.role !== 'admin') {
+        // Allow Admins, Managers, Super Admins to bypass pending/rejected checks
+        const allowedRoles = ['admin', 'manager', 'super_admin'];
+        if (!allowedRoles.includes(user.role)) {
             if (user.status === 'pending') {
                 return res.status(403).json({
                     message: 'Account is pending approval. Please wait for admin confirmation.',
@@ -335,7 +491,8 @@ const googleLogin = async (req, res) => {
             email: user.email,
             role: user.role,
             token: generateToken(user.id),
-            studentProfile: user.studentProfile
+            studentProfile: user.studentProfile,
+            studentId: user.studentId
         });
 
         // Log Google login
@@ -351,5 +508,8 @@ module.exports = {
     googleLogin,
     getMe,
     updateProfile,
-    verifyOTP
+    verifyOTP,
+    forgotPassword,
+    resetPassword,
+    verifyResetOTP
 };

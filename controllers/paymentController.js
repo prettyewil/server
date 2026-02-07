@@ -7,7 +7,7 @@ const { logAction } = require('../utils/logger');
 // @access  Private (Admin)
 const getPayments = async (req, res) => {
     try {
-        const payments = await Payment.find().populate('student', 'name email roomNumber');
+        const payments = await Payment.find().select('-receiptData').populate('student', 'name email roomNumber').sort({ createdAt: -1 });
         res.status(200).json(payments);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -19,7 +19,7 @@ const getPayments = async (req, res) => {
 // @access  Private (Student)
 const getMyHistory = async (req, res) => {
     try {
-        const payments = await Payment.find({ student: req.user.id }).sort({ createdAt: -1 });
+        const payments = await Payment.find({ student: req.user.id }).select('-receiptData').sort({ createdAt: -1 });
         res.status(200).json(payments);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -45,6 +45,7 @@ const createPayment = async (req, res) => {
             type,
             dueDate,
             notes,
+            referenceNumber: req.body.referenceNumber,
             status: 'pending' // Default
         });
 
@@ -79,8 +80,12 @@ const updatePaymentStatus = async (req, res) => {
         }
 
         if (req.file) {
-            // Save the file path relative to the server root
-            payment.receiptUrl = `/uploads/${req.file.filename}`;
+            // Save the file buffer and mimetype
+            payment.receiptData = req.file.buffer;
+            payment.receiptContentType = req.file.mimetype;
+
+            // Generate a dynamic URL for the receipt
+            payment.receiptUrl = `/api/payments/${payment._id}/receipt`;
 
             // If student is uploading, force status to 'submitted'
             // This prevents "it automatically says paid"
@@ -102,19 +107,46 @@ const updatePaymentStatus = async (req, res) => {
 
         // Allow Admin to update other details (existing logic)
         if (req.user.role === 'admin') {
-            const { amount, type, dueDate, notes, student } = req.body;
+            const { amount, type, dueDate, notes, student, referenceNumber } = req.body;
             if (amount) payment.amount = amount;
             if (type) payment.type = type;
             if (dueDate) payment.dueDate = dueDate;
             if (notes) payment.notes = notes;
             if (student) payment.student = student;
+            if (referenceNumber) payment.referenceNumber = referenceNumber;
         }
 
-        const updatedPayment = await payment.save();
-        res.status(200).json(updatedPayment);
+        await payment.save();
+
+        // Return the updated payment, but exclude the binary data to keep response light
+        const paymentResponse = await Payment.findById(payment._id).select('-receiptData');
+        res.status(200).json(paymentResponse);
 
         // Log status update
         await logAction(req.user.id, 'UPDATE_PAYMENT', `Updated payment ${payment._id} status to ${payment.status}`, req);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get payment receipt image
+// @route   GET /api/payments/:id/receipt
+// @access  Private (Admin/Student)
+const getPaymentReceipt = async (req, res) => {
+    try {
+        const payment = await Payment.findById(req.params.id);
+
+        if (!payment || !payment.receiptData) {
+            return res.status(404).json({ message: 'Receipt not found' });
+        }
+
+        // Optional: Check access rights (student can see own, admin can see all)
+        // This route might be called directly by an <img> tag so auth headers might be tricky if not using cookies
+        // For now, if we assume the token is passed in query string or headers, we can protect it. 
+        // If simply unprotected or protected via query param:
+
+        res.set('Content-Type', payment.receiptContentType);
+        res.send(payment.receiptData);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -125,4 +157,5 @@ module.exports = {
     getMyHistory,
     createPayment,
     updatePaymentStatus,
+    getPaymentReceipt
 };

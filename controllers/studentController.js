@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 // @access  Private (Admin/Student for dropdowns)
 const getStudents = async (req, res) => {
     try {
-        const students = await User.find({ role: 'student' }).select('-password').sort({ name: 1 });
+        const students = await User.find({ role: 'student' }).select('-password').sort({ lastName: 1, firstName: 1 });
         res.json(students);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -41,13 +41,17 @@ const createStudent = async (req, res) => {
         const hashedPassword = await bcrypt.hash('password123', salt); // Default password
 
         const user = await User.create({
-            name: `${first_name} ${last_name}`,
+            firstName: first_name,
+            lastName: last_name,
+            middleInitial: req.body.middle_initial,
+            // name: `${first_name} ${last_name}`, // Handled by pre-save
             email,
             password: hashedPassword,
             role: 'student',
             studentId: student_id,
             studentProfile: {
                 roomNumber: roomNumber,
+                enrollmentDate: req.body.enrollment_date || new Date(),
                 status: status || 'inactive'
             }
         });
@@ -71,7 +75,12 @@ const updateStudent = async (req, res) => {
             return res.status(404).json({ message: 'Student not found' });
         }
 
-        user.name = `${req.body.first_name || user.name.split(' ')[0]} ${req.body.last_name || user.name.split(' ')[1]}`;
+        if (req.body.first_name) user.firstName = req.body.first_name;
+        if (req.body.last_name) user.lastName = req.body.last_name;
+        if (req.body.middle_initial !== undefined) user.middleInitial = req.body.middle_initial; // Allow clearing?
+
+        // Fallback for name update if needed, but we prefer specific fields.
+        // user.name = ... // Handled by pre-save
         user.email = req.body.email || user.email;
 
         // Update user.studentId if provided (and maybe check uniqueness if not handled by mongoose)
@@ -99,6 +108,7 @@ const updateStudent = async (req, res) => {
 
             // Update other fields as needed
             if (req.body.phone_number) user.studentProfile.phoneNumber = req.body.phone_number;
+            if (req.body.enrollment_date) user.studentProfile.enrollmentDate = req.body.enrollment_date;
         }
 
         const updatedUser = await user.save();

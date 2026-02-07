@@ -30,7 +30,7 @@ const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
-const cleaningRoutes = require('./routes/cleaningRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const logRoutes = require('./routes/logRoutes');
@@ -43,7 +43,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api/cleaning-schedule', cleaningRoutes);
+app.use('/api/tasks', taskRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/logs', logRoutes);
@@ -54,6 +54,9 @@ app.get('/', (req, res) => {
 
 // Global Error Handler
 app.use(errorHandler);
+
+const { scheduleBackups } = require('./services/backupService');
+scheduleBackups();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

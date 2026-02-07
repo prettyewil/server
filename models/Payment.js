@@ -33,6 +33,16 @@ const paymentSchema = new mongoose.Schema({
     receiptUrl: {
         type: String,
     },
+    receiptData: {
+        type: Buffer,
+    },
+    receiptContentType: {
+        type: String,
+    },
+    referenceNumber: {
+        type: String,
+        trim: true
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Payment', paymentSchema);

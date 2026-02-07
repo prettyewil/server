@@ -1,0 +1,15 @@
+[
+  {
+    "_id": "6986af6a1145f4253d81c991",
+    "title": "test",
+    "type": "cleaning",
+    "area": "room",
+    "assignedRoom": "1",
+    "dueDate": "2026-02-07T17:00:00.000Z",
+    "status": "pending",
+    "notes": "",
+    "createdAt": "2026-02-07T03:20:10.131Z",
+    "updatedAt": "2026-02-07T03:20:10.131Z",
+    "__v": 0
+  }
+]

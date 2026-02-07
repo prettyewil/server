@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 // @access  Admin
 const getStaff = async (req, res) => {
     try {
-        const staff = await User.find({ role: 'staff' }).select('-password').sort({ name: 1 });
+        const staff = await User.find({ role: { $in: ['staff', 'admin', 'manager'] } }).select('-password').sort({ lastName: 1, firstName: 1 });
         res.json(staff);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -19,7 +19,8 @@ const getStaff = async (req, res) => {
 // @route   POST /api/users/staff
 // @access  Admin
 const createStaff = async (req, res) => {
-    const { name, email, password } = req.body;
+    // Expect split fields
+    const { firstName, lastName, middleInitial, name, email, password } = req.body;
 
     try {
         const userExists = await User.findOne({ email });
@@ -27,12 +28,25 @@ const createStaff = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        // Handle fallback if only name is provided (e.g. from old frontend)
+        let fName = firstName;
+        let lName = lastName;
+
+        if (!fName && name) {
+            const parts = name.split(' ');
+            fName = parts[0];
+            lName = parts.slice(1).join(' ') || '.';
+        }
+
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const user = await User.create({
-            name,
+            firstName: fName,
+            lastName: lName,
+            middleInitial,
+            // name, // Pre-save handles this
             email,
             password: hashedPassword,
             role: 'staff',
@@ -130,10 +144,49 @@ const rejectUser = async (req, res) => {
     }
 };
 
+// @desc    Update user role
+// @route   PUT /api/users/:id/role
+// @access  Super Admin
+const updateUserRole = async (req, res) => {
+    const { role } = req.body;
+
+    // Allowed roles to switch to/from
+    const allowedRoles = ['manager', 'staff', 'admin'];
+
+    if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Prevent modifying students or super_admins via this route if strictness needed
+        // But per request "super admin can only edit the role of the employee not the students"
+        if (user.role === 'student') {
+            return res.status(400).json({ message: 'Cannot change role of a student' });
+        }
+
+        user.role = role;
+        await user.save();
+
+        await logAction(req.user.id, 'UPDATE_ROLE', `Updated user ${user.email} role to ${role}`, req);
+
+        res.json({ message: `User role updated to ${role}`, user });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getPendingUsers,
     approveUser,
     rejectUser,
     getStaff,
-    createStaff
+    createStaff,
+    updateUserRole
 };

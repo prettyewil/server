@@ -1,0 +1,47 @@
+[
+  {
+    "_id": "6982b4be81e98c0afc788af4",
+    "roomNumber": "1",
+    "capacity": 4,
+    "price": 1500,
+    "status": "Available",
+    "features": [
+      "Air Conditioning"
+    ],
+    "createdAt": "2026-02-04T02:53:50.126Z",
+    "updatedAt": "2026-02-06T04:08:02.940Z",
+    "__v": 0
+  },
+  {
+    "_id": "698579a262f33c42beff25bd",
+    "roomNumber": "2",
+    "capacity": 4,
+    "price": 1600,
+    "status": "Available",
+    "features": [
+      "Air Conditioning",
+      "Private Bathroom",
+      "Wi-Fi",
+      "Study Desk"
+    ],
+    "createdAt": "2026-02-06T05:18:26.796Z",
+    "updatedAt": "2026-02-06T05:18:26.796Z",
+    "__v": 0
+  },
+  {
+    "_id": "698611145eda36d85afe6627",
+    "roomNumber": "3",
+    "capacity": 4,
+    "price": 2000,
+    "status": "Available",
+    "features": [
+      "Air Conditioning",
+      "Private Bathroom",
+      "Study Desk",
+      "Wi-Fi"
+    ],
+    "createdAt": "2026-02-06T16:04:36.735Z",
+    "updatedAt": "2026-02-06T16:04:36.735Z",
+    "__v": 0
+  }
+]
