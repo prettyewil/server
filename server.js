@@ -22,6 +22,8 @@ app.use(helmet({
 app.use(morgan('dev'));
 app.use('/uploads', express.static('uploads'));
 
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB Connected'))

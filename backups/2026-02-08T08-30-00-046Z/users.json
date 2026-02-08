@@ -1,0 +1,129 @@
+[
+  {
+    "status": "pending",
+    "_id": "6982b42a81e98c0afc788ad0",
+    "name": "Cydiemar Lagrosas",
+    "email": "lagrosascydiemar@gmail.com",
+    "password": "$2b$10$D3sxsmzRGImeqGsWPjGMxeRMfpmaiAQLxRNok9s.xupx1yfTsf5sS",
+    "role": "super_admin",
+    "createdAt": "2026-02-04T02:51:22.954Z",
+    "updatedAt": "2026-02-04T02:51:22.954Z",
+    "__v": 0,
+    "fullName": "Cydiemar Lagrosas",
+    "id": "6982b42a81e98c0afc788ad0"
+  },
+  {
+    "_id": "69832232bc26edccd1fda086",
+    "name": "Airel Jay",
+    "email": "2301101136@student.buksu.edu.ph",
+    "password": "$2b$10$hSzlKVeZ6WXE8b6pONVFheaJAvDVL5/nSupNJZ6QBXLPwTqxNsvre",
+    "role": "super_admin",
+    "studentProfile": {
+      "status": "active",
+      "_id": "69832232bc26edccd1fda087",
+      "id": "69832232bc26edccd1fda087"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-04T10:40:50.486Z",
+    "updatedAt": "2026-02-04T10:41:14.814Z",
+    "__v": 0,
+    "fullName": "Airel Jay",
+    "id": "69832232bc26edccd1fda086"
+  },
+  {
+    "_id": "6983eb6d3f82ad6c4fa4b33d",
+    "name": "Cydiemar Lagrosas",
+    "email": "cydlgrss@gmail.com",
+    "password": "$2b$10$ncfFw1j8.7HwoO4oJHdpOeynp8UTyFQPcyGujWTTDKV5JVVD/vrta",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "6983eb6d3f82ad6c4fa4b33e",
+      "roomNumber": "3",
+      "emergencyContactName": "Cydiemar O Lagrosas",
+      "emergencyContactPhone": "09354477276",
+      "phoneNumber": "09354477276",
+      "id": "6983eb6d3f82ad6c4fa4b33e"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-05T00:59:25.870Z",
+    "updatedAt": "2026-02-07T07:01:36.197Z",
+    "__v": 0,
+    "studentId": "1234",
+    "firstName": "Cydiemar",
+    "lastName": "Lagrosas",
+    "fullName": "Cydiemar Lagrosas",
+    "id": "6983eb6d3f82ad6c4fa4b33d"
+  },
+  {
+    "_id": "698572fae362896e21468de7",
+    "name": "Franz Bertz",
+    "email": "edomolatch@gmail.com",
+    "password": "$2b$10$CJxP72CbJWQD3nqWOPLf6OeEhyF9pC7lYuCFHdVRXl4Vst2LjSnX2",
+    "role": "student",
+    "studentId": "2022302718",
+    "studentProfile": {
+      "roomNumber": "2",
+      "phoneNumber": "09354477276",
+      "emergencyContactName": "Cydiemar O Lagrosas",
+      "emergencyContactPhone": "09354477276",
+      "status": "active",
+      "_id": "698572fae362896e21468de8",
+      "id": "698572fae362896e21468de8"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-06T04:50:02.767Z",
+    "updatedAt": "2026-02-06T05:20:03.113Z",
+    "__v": 0,
+    "fullName": "Franz Bertz",
+    "id": "698572fae362896e21468de7"
+  },
+  {
+    "_id": "6987f9cc1f9d2d14adbf0568",
+    "firstName": "Cydiemar",
+    "lastName": "lagrosas",
+    "email": "s.lagrosas.cydiemar@cmu.edu.ph",
+    "password": "$2b$10$6FBQq8jnzhU9.B38sof/euS46gOh4jV83nKxWn/GstxoFP4sdCcAm",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "6987f9cc1f9d2d14adbf0569",
+      "emergencyContactName": "sayd lagrosas",
+      "emergencyContactPhone": "0912345678",
+      "phoneNumber": "09354477276",
+      "roomNumber": "1",
+      "id": "6987f9cc1f9d2d14adbf0569"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-08T02:49:48.265Z",
+    "updatedAt": "2026-02-08T07:51:03.380Z",
+    "name": "Cydiemar lagrosas",
+    "__v": 0,
+    "studentId": "1234567890",
+    "fullName": "Cydiemar lagrosas",
+    "id": "6987f9cc1f9d2d14adbf0568"
+  },
+  {
+    "_id": "6988497ecfded06ab3a736d3",
+    "firstName": "Myles",
+    "lastName": "Ocoy",
+    "email": "ocoymyles@gmail.com",
+    "password": "$2b$10$7d1RN1Eyy75EVIa3c80H2Ogv0696Vgzr9RZuMp5dO5mlUldAmqXWq",
+    "role": "student",
+    "studentId": "2392723647",
+    "studentProfile": {
+      "roomNumber": "2",
+      "enrollmentDate": "2026-02-08T08:29:50.276Z",
+      "status": "active",
+      "_id": "6988497ecfded06ab3a736d4",
+      "id": "6988497ecfded06ab3a736d4"
+    },
+    "status": "pending",
+    "createdAt": "2026-02-08T08:29:50.325Z",
+    "updatedAt": "2026-02-08T08:29:50.325Z",
+    "name": "Myles Ocoy",
+    "__v": 0,
+    "fullName": "Myles Ocoy",
+    "id": "6988497ecfded06ab3a736d3"
+  }
+]

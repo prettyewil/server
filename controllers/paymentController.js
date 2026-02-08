@@ -2,6 +2,7 @@ const Payment = require('../models/Payment');
 const User = require('../models/User');
 const { logAction } = require('../utils/logger');
 const emailService = require('../services/emailService');
+const { createNotification } = require('./notificationController');
 
 // @desc    Get all payments
 // @route   GET /api/payments
@@ -126,6 +127,38 @@ const updatePaymentStatus = async (req, res) => {
         // Send receipt if paid
         if (payment.status === 'paid' && paymentResponse.student) {
             await emailService.sendPaymentReceipt(paymentResponse.student, paymentResponse);
+            // Notify student
+            await createNotification(
+                payment.student._id,
+                `Your payment of ₱${payment.amount} for ${payment.type} has been approved.`,
+                'success',
+                payment._id,
+                'Payment'
+            );
+        } else if (payment.status === 'submitted' && req.user.role === 'student') {
+            // Notify Admins about new submission (Need to find admins)
+            // For simplicity, we might skip this or find all admins. 
+            // Let's implement finding all admins to notify them.
+            const User = require('../models/User');
+            const admins = await User.find({ role: { $in: ['admin', 'manager', 'super_admin'] } });
+            for (const admin of admins) {
+                await createNotification(
+                    admin._id,
+                    `New payment submission from ${req.user.firstName} ${req.user.lastName}`,
+                    'info',
+                    payment._id,
+                    'Payment'
+                );
+            }
+        } else if (status === 'rejected' && paymentResponse.student) {
+            // Notify student of rejection
+            await createNotification(
+                payment.student._id,
+                `Your payment of ₱${payment.amount} for ${payment.type} was rejected. Please contact admin.`,
+                'error',
+                payment._id,
+                'Payment'
+            );
         }
 
         // Log status update

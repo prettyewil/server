@@ -11,10 +11,10 @@ const { restrictTo } = require('../middleware/roleMiddleware');
 
 router.route('/')
     .get(protect, getTasks)
-    .post(protect, restrictTo('admin'), createTask);
+    .post(protect, restrictTo('admin', 'super_admin'), createTask);
 
 router.route('/:id')
-    .put(protect, restrictTo('admin'), updateTask)
-    .delete(protect, restrictTo('admin'), deleteTask);
+    .put(protect, restrictTo('admin', 'super_admin'), updateTask)
+    .delete(protect, restrictTo('admin', 'super_admin'), deleteTask);
 
 module.exports = router;

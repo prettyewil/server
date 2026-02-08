@@ -391,6 +391,10 @@ const updateProfile = async (req, res) => {
         await logAction(updatedUser.id, 'UPDATE_PROFILE', 'User updated profile', req);
 
     } catch (error) {
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue)[0];
+            return res.status(400).json({ message: `The ${field} '${error.keyValue[field]}' is already in use.` });
+        }
         res.status(500).json({ message: error.message });
     }
 };
