@@ -24,6 +24,12 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
 
+            // Check if user is active/approved
+            if (req.user.status !== 'active' && req.user.status !== 'approved') {
+                console.log('User status not active/approved:', req.user.status);
+                return res.status(403).json({ message: 'Access denied. Account not verified.', status: req.user.status });
+            }
+
             next();
         } catch (error) {
             console.error('Auth Middleware Error:', error.message);

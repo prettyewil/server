@@ -29,6 +29,7 @@ const sendEmail = async (to, subject, html) => {
 
 const sendApprovalEmail = async (user) => {
     const subject = 'Your DormSync Account has been Approved!';
+    const loginLink = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/login` : 'http://localhost:5173/login';
     const html = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             <h1 style="color: #001F3F;">Welcome to DormSync!</h1>
@@ -36,7 +37,7 @@ const sendApprovalEmail = async (user) => {
             <p>Your account registration has been <strong>APPROVED</strong> by the administrator.</p>
             <p>You can now log in to the portal using your credentials.</p>
             <br>
-            <a href="http://localhost:5173/login" style="background-color: #001F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to DormSync</a>
+            <a href="${loginLink}" style="background-color: #001F3F; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to DormSync</a>
             <br><br>
             <p>Regards,<br>DormSync Team</p>
         </div>

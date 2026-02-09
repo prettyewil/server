@@ -1,0 +1,130 @@
+[
+  {
+    "status": "pending",
+    "_id": "6982b42a81e98c0afc788ad0",
+    "name": "Cydiemar Lagrosas",
+    "email": "lagrosascydiemar@gmail.com",
+    "password": "$2b$10$D3sxsmzRGImeqGsWPjGMxeRMfpmaiAQLxRNok9s.xupx1yfTsf5sS",
+    "role": "super_admin",
+    "createdAt": "2026-02-04T02:51:22.954Z",
+    "updatedAt": "2026-02-04T02:51:22.954Z",
+    "__v": 0,
+    "fullName": "Cydiemar Lagrosas",
+    "id": "6982b42a81e98c0afc788ad0"
+  },
+  {
+    "_id": "69832232bc26edccd1fda086",
+    "name": "Airel Jay",
+    "email": "2301101136@student.buksu.edu.ph",
+    "password": "$2b$10$hSzlKVeZ6WXE8b6pONVFheaJAvDVL5/nSupNJZ6QBXLPwTqxNsvre",
+    "role": "super_admin",
+    "studentProfile": {
+      "status": "active",
+      "_id": "69832232bc26edccd1fda087",
+      "id": "69832232bc26edccd1fda087"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-04T10:40:50.486Z",
+    "updatedAt": "2026-02-04T10:41:14.814Z",
+    "__v": 0,
+    "fullName": "Airel Jay",
+    "id": "69832232bc26edccd1fda086"
+  },
+  {
+    "_id": "6983eb6d3f82ad6c4fa4b33d",
+    "name": "Cydiemar Lagrosas",
+    "email": "cydlgrss@gmail.com",
+    "password": "$2b$10$ncfFw1j8.7HwoO4oJHdpOeynp8UTyFQPcyGujWTTDKV5JVVD/vrta",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "6983eb6d3f82ad6c4fa4b33e",
+      "roomNumber": "3",
+      "emergencyContactName": "Cydiemar O Lagrosas",
+      "emergencyContactPhone": "09354477276",
+      "phoneNumber": "09354477276",
+      "id": "6983eb6d3f82ad6c4fa4b33e"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-05T00:59:25.870Z",
+    "updatedAt": "2026-02-07T07:01:36.197Z",
+    "__v": 0,
+    "studentId": "1234",
+    "firstName": "Cydiemar",
+    "lastName": "Lagrosas",
+    "fullName": "Cydiemar Lagrosas",
+    "id": "6983eb6d3f82ad6c4fa4b33d"
+  },
+  {
+    "_id": "6987f9cc1f9d2d14adbf0568",
+    "firstName": "Cydiemar",
+    "lastName": "lagrosas",
+    "email": "s.lagrosas.cydiemar@cmu.edu.ph",
+    "password": "$2b$10$6FBQq8jnzhU9.B38sof/euS46gOh4jV83nKxWn/GstxoFP4sdCcAm",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "6987f9cc1f9d2d14adbf0569",
+      "emergencyContactName": "sayd lagrosas",
+      "emergencyContactPhone": "0912345678",
+      "phoneNumber": "09354477276",
+      "roomNumber": "1",
+      "id": "6987f9cc1f9d2d14adbf0569"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-08T02:49:48.265Z",
+    "updatedAt": "2026-02-08T07:51:03.380Z",
+    "name": "Cydiemar lagrosas",
+    "__v": 0,
+    "studentId": "1234567890",
+    "fullName": "Cydiemar lagrosas",
+    "id": "6987f9cc1f9d2d14adbf0568"
+  },
+  {
+    "_id": "69884a71e8e1d624383170fc",
+    "firstName": "Ewil",
+    "lastName": "Relova",
+    "email": "relovaaireljay@gmail.com",
+    "password": "$2b$10$p/517oa0WbDmOwTJmKyGC.R51LojUzBjNq2RsCAj4xNK00bDnA0Ne",
+    "role": "student",
+    "studentId": "2301101136",
+    "studentProfile": {
+      "roomNumber": "3",
+      "enrollmentDate": "2026-02-08T08:33:53.864Z",
+      "status": "active",
+      "_id": "69884a71e8e1d624383170fd",
+      "id": "69884a71e8e1d624383170fd"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-08T08:33:53.949Z",
+    "updatedAt": "2026-02-08T08:38:07.688Z",
+    "name": "Ewil Relova",
+    "__v": 0,
+    "fullName": "Ewil Relova",
+    "id": "69884a71e8e1d624383170fc"
+  },
+  {
+    "_id": "69884b37a1e2acbd0f9ad7d6",
+    "firstName": "Edo",
+    "lastName": "Molatch",
+    "email": "edomolatch@gmail.com",
+    "password": "$2b$10$15keRNkG3mxTbeLdoazBaeKblzXU.RygX8NUjMdE.seu6X5zWTTTa",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "69884b37a1e2acbd0f9ad7d7",
+      "emergencyContactName": "sayd lagrosas",
+      "emergencyContactPhone": "0912345678",
+      "phoneNumber": "09354477276",
+      "id": "69884b37a1e2acbd0f9ad7d7"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-08T08:37:11.814Z",
+    "updatedAt": "2026-02-08T08:42:13.393Z",
+    "name": "Edo Molatch",
+    "__v": 0,
+    "studentId": "0987654312",
+    "fullName": "Edo Molatch",
+    "id": "69884b37a1e2acbd0f9ad7d6"
+  }
+]
