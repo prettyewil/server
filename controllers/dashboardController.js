@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const MaintenanceRequest = require('../models/MaintenanceRequest');
+const Task = require('../models/Task');
 const Payment = require('../models/Payment');
 
 // @desc    Get admin dashboard stats
@@ -10,7 +11,7 @@ const getAdminStats = async (req, res) => {
         const totalStudents = await User.countDocuments({ role: 'student' });
         const pendingMaintenance = await MaintenanceRequest.countDocuments({ status: 'pending' });
         const overduePayments = await Payment.countDocuments({ status: 'overdue' });
-        const pendingCleaning = 0; // Mock data as requested
+        const pendingCleaning = await Task.countDocuments({ status: 'pending' });
 
         // Fetch recent announcements
         const recentAnnouncements = await require('../models/Announcement').find().sort({ createdAt: -1 }).limit(3);
