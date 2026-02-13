@@ -1,0 +1,114 @@
+[
+  {
+    "_id": "69832232bc26edccd1fda086",
+    "name": "Airel Jay",
+    "email": "2301101136@student.buksu.edu.ph",
+    "password": "$2b$10$hSzlKVeZ6WXE8b6pONVFheaJAvDVL5/nSupNJZ6QBXLPwTqxNsvre",
+    "role": "super_admin",
+    "studentProfile": {
+      "status": "active",
+      "_id": "69832232bc26edccd1fda087",
+      "id": "69832232bc26edccd1fda087"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-04T10:40:50.486Z",
+    "updatedAt": "2026-02-04T10:41:14.814Z",
+    "__v": 0,
+    "fullName": "Airel Jay",
+    "id": "69832232bc26edccd1fda086"
+  },
+  {
+    "_id": "69884a71e8e1d624383170fc",
+    "firstName": "Ewil",
+    "lastName": "Relova",
+    "email": "relovaaireljay@gmail.com",
+    "password": "$2b$10$p/517oa0WbDmOwTJmKyGC.R51LojUzBjNq2RsCAj4xNK00bDnA0Ne",
+    "role": "student",
+    "studentId": "2301101136",
+    "studentProfile": {
+      "roomNumber": "3",
+      "enrollmentDate": "2026-02-08T08:33:53.864Z",
+      "status": "active",
+      "_id": "69884a71e8e1d624383170fd",
+      "id": "69884a71e8e1d624383170fd"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-08T08:33:53.949Z",
+    "updatedAt": "2026-02-08T08:38:07.688Z",
+    "name": "Ewil Relova",
+    "__v": 0,
+    "fullName": "Ewil Relova",
+    "id": "69884a71e8e1d624383170fc"
+  },
+  {
+    "_id": "698a89a6df862bebbed723dd",
+    "firstName": "Ewil",
+    "lastName": "Relova",
+    "email": "ewilrelova@gmail.com",
+    "password": "$2b$10$69IL86JK6FbHTs12gWwUAe9/ijdvyagx3Zns9i7a4OvyXIsvAPXd6",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "698a89a6df862bebbed723de",
+      "roomNumber": "5",
+      "emergencyContactName": "Dadi",
+      "emergencyContactPhone": "0925227372",
+      "phoneNumber": "093536673",
+      "id": "698a89a6df862bebbed723de"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-10T01:28:06.457Z",
+    "updatedAt": "2026-02-10T01:37:18.730Z",
+    "name": "Ewil Relova",
+    "__v": 0,
+    "studentId": "23738389",
+    "fullName": "Ewil Relova",
+    "id": "698a89a6df862bebbed723dd"
+  },
+  {
+    "_id": "698a92fdad26578dcc890e31",
+    "firstName": "Franz",
+    "lastName": "Bertz",
+    "middleInitial": "",
+    "email": "edomolatch@gmail.com",
+    "password": "$2b$10$Rx8TmiLfw2utt0go/sExiuRjLJnJIN0FY7ddxKbAKBuWqexSbM.Wu",
+    "role": "super_admin",
+    "studentId": "1234567890",
+    "studentProfile": {
+      "roomNumber": "TBD",
+      "phoneNumber": "",
+      "emergencyContactName": "",
+      "emergencyContactPhone": "",
+      "status": "active",
+      "_id": "698a92fdad26578dcc890e32",
+      "id": "698a92fdad26578dcc890e32"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-10T02:07:57.058Z",
+    "updatedAt": "2026-02-10T02:08:46.931Z",
+    "name": "Franz Bertz",
+    "__v": 0,
+    "fullName": "Franz Bertz",
+    "id": "698a92fdad26578dcc890e31"
+  },
+  {
+    "_id": "698e5ff103bd8fcb631f3ade",
+    "firstName": "Jes",
+    "lastName": "Maca",
+    "email": "macajess22@gmail.com",
+    "password": "$2b$10$5ZFPt/WNenwNCMgoUYcWveR03YbjGAL/4cTVlwdnzpHKUs4yfZH36",
+    "role": "student",
+    "studentProfile": {
+      "status": "active",
+      "_id": "698e5ff103bd8fcb631f3adf",
+      "id": "698e5ff103bd8fcb631f3adf"
+    },
+    "status": "approved",
+    "createdAt": "2026-02-12T23:19:13.326Z",
+    "updatedAt": "2026-02-12T23:22:55.538Z",
+    "name": "Jes Maca",
+    "__v": 0,
+    "fullName": "Jes Maca",
+    "id": "698e5ff103bd8fcb631f3ade"
+  }
+]

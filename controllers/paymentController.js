@@ -191,10 +191,33 @@ const getPaymentReceipt = async (req, res) => {
     }
 };
 
+// @desc    Delete payment
+// @route   DELETE /api/payments/:id
+// @access  Private (Admin)
+const deletePayment = async (req, res) => {
+    try {
+        const payment = await Payment.findById(req.params.id);
+
+        if (!payment) {
+            return res.status(404).json({ message: 'Payment not found' });
+        }
+
+        await payment.deleteOne();
+
+        res.status(200).json({ message: 'Payment removed' });
+
+        // Log deletion
+        await logAction(req.user.id, 'DELETE_PAYMENT', `Deleted payment ${req.params.id}`, req);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getPayments,
     getMyHistory,
     createPayment,
     updatePaymentStatus,
-    getPaymentReceipt
+    getPaymentReceipt,
+    deletePayment
 };
