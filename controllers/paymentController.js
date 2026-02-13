@@ -191,6 +191,65 @@ const getPaymentReceipt = async (req, res) => {
     }
 };
 
+// @desc    Create bulk payments
+// @route   POST /api/payments/bulk
+// @access  Private (Admin)
+const createBulkPayment = async (req, res) => {
+    const { payments } = req.body;
+
+    if (!payments || !Array.isArray(payments) || payments.length === 0) {
+        return res.status(400).json({ message: 'No payments provided' });
+    }
+
+    try {
+        const createdPayments = [];
+        const errors = [];
+
+        for (const paymentData of payments) {
+            const { student: studentId, amount, type, dueDate, notes, referenceNumber, status } = paymentData;
+
+            // Basic validation
+            if (!studentId || !amount || !dueDate) {
+                errors.push({ payment: paymentData, error: 'Missing required fields' });
+                continue;
+            }
+
+            // Check if student exists
+            const studentUser = await User.findById(studentId);
+            if (!studentUser) {
+                errors.push({ payment: paymentData, error: `Student not found: ${studentId}` });
+                continue;
+            }
+
+            const payment = new Payment({
+                student: studentId,
+                amount,
+                type: type || 'rent',
+                dueDate,
+                notes,
+                referenceNumber,
+                status: status || 'pending'
+            });
+
+            await payment.save();
+            createdPayments.push(payment);
+
+            // Log action
+            await logAction(req.user ? req.user.id : studentId, 'CREATE_PAYMENT', `Created payment of ${amount} for student ${studentUser.email} (Bulk)`, req);
+        }
+
+        res.status(201).json({
+            message: `Successfully created ${createdPayments.length} payments`,
+            createdCount: createdPayments.length,
+            errorCount: errors.length,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Delete payment
 // @route   DELETE /api/payments/:id
 // @access  Private (Admin)
@@ -217,6 +276,7 @@ module.exports = {
     getPayments,
     getMyHistory,
     createPayment,
+    createBulkPayment,
     updatePaymentStatus,
     getPaymentReceipt,
     deletePayment
