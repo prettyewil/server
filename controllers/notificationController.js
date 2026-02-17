@@ -5,11 +5,15 @@ const Notification = require('../models/Notification');
 // @access  Private
 const getMyNotifications = async (req, res) => {
     try {
-        const notifications = await Notification.find({ recipient: req.user.id })
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+        const notifications = await Notification.find({ recipient: req.user._id })
             .sort({ createdAt: -1 })
             .limit(50); // Limit to last 50
         res.json(notifications);
     } catch (error) {
+        console.error('Get Notifications Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

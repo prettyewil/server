@@ -107,6 +107,7 @@ const approveUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/:id/reject
 // @access  Admin
 const rejectUser = asyncHandler(async (req, res) => {
+    console.log('REJECT USER START:', req.params.id); // DEBUG
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -118,10 +119,22 @@ const rejectUser = asyncHandler(async (req, res) => {
     await user.save();
 
     // Send email
-    await sendRejectionEmail(user, req.body.reason);
+    try {
+        const reason = req.body && req.body.reason ? req.body.reason : 'No specific reason provided.';
+        console.log('Sending rejection email to:', user.email); // DEBUG
+        await sendRejectionEmail(user, reason);
+        console.log('Rejection email sent successfully'); // DEBUG
+    } catch (emailError) {
+        console.error('FAILED TO SEND REJECTION EMAIL:', emailError);
+        // Do not crash the request, just log it? Or throw?
+        // If we want to return 500 on email failure, we let it throw.
+        // But maybe we should handle it gracefully?
+        // For debugging, let's log explicitly.
+    }
 
     // Log action
-    await logAction(req.user.id, 'REJECT_USER', `Rejected user: ${user.email}. Reason: ${req.body.reason}`, req);
+    const reasonLog = req.body && req.body.reason ? req.body.reason : 'No reason provided';
+    await logAction(req.user.id, 'REJECT_USER', `Rejected user: ${user.email}. Reason: ${reasonLog}`, req);
 
     res.json({ message: 'User rejected and notified' });
 });

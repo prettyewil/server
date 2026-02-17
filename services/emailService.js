@@ -22,6 +22,7 @@ const sendEmail = async (to, subject, html) => {
         console.log(`[Email] Sent to ${to}: ${subject}`);
     } catch (error) {
         console.error('[Email] Error sending email:', error);
+        throw error; // Rethrow to see if this causes the 500
     }
 };
 
