@@ -104,7 +104,7 @@ const sendPaymentReceipt = async (student, payment) => {
 
 const sendApprovalEmail = async (user) => {
     const subject = 'Your DormSync Account has been Approved!';
-    const loginLink = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/login` : 'http://localhost:5173/login';
+    const loginLink = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/login` : 'https://dormsync-xi.vercel.app/login';
     const html = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             <h1 style="color: #001F3F;">Welcome to DormSync!</h1>
