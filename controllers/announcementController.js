@@ -31,7 +31,50 @@ const createAnnouncement = async (req, res) => {
     }
 };
 
+// @desc    Update an announcement
+// @route   PUT /api/announcements/:id
+// @access  Private (Admin)
+const updateAnnouncement = async (req, res) => {
+    try {
+        const { title, content, priority } = req.body;
+        const announcement = await Announcement.findById(req.params.id);
+
+        if (!announcement) {
+            return res.status(404).json({ message: 'Announcement not found' });
+        }
+
+        announcement.title = title || announcement.title;
+        announcement.content = content || announcement.content;
+        announcement.priority = priority || announcement.priority;
+
+        const updatedAnnouncement = await announcement.save();
+        res.status(200).json(updatedAnnouncement);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete an announcement
+// @route   DELETE /api/announcements/:id
+// @access  Private (Admin)
+const deleteAnnouncement = async (req, res) => {
+    try {
+        const announcement = await Announcement.findById(req.params.id);
+
+        if (!announcement) {
+            return res.status(404).json({ message: 'Announcement not found' });
+        }
+
+        await announcement.deleteOne();
+        res.status(200).json({ message: 'Announcement removed' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAnnouncements,
     createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
 };

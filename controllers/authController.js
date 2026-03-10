@@ -25,7 +25,7 @@ const generateToken = (id) => {
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
     // name is now optional/virtual, we expect parts
-    const { firstName, lastName, middleInitial, name, email, password, role, studentProfile, studentId } = req.body;
+    const { firstName, lastName, middleInitial, name, email, password, role, studentProfile, studentId, otpMethod } = req.body;
 
     const userExists = await User.findOne({ email });
 
@@ -47,17 +47,27 @@ const registerUser = asyncHandler(async (req, res) => {
                 userExists.lastName = parts.slice(1).join(' ');
             }
 
+            if (studentProfile) {
+                userExists.studentProfile = userExists.studentProfile || {};
+                if (studentProfile.phoneNumber) userExists.studentProfile.phoneNumber = studentProfile.phoneNumber;
+            }
+
             userExists.password = await bcrypt.hash(password, await bcrypt.genSalt(10));
 
             await userExists.save();
 
-            if (userExists.studentProfile && userExists.studentProfile.phoneNumber) {
-                try { await twilioService.sendVerificationSMS(userExists.studentProfile.phoneNumber); } catch (e) { }
+            if (otpMethod === 'sms') {
+                if (!userExists.studentProfile || !userExists.studentProfile.phoneNumber) {
+                    res.status(400);
+                    throw new Error('Phone number is required for SMS OTP');
+                }
+                try { await twilioService.sendVerificationSMS(userExists.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+            } else {
+                await emailService.sendOTPEmail(email, otp);
             }
-            await emailService.sendOTPEmail(email, otp);
 
             return res.status(200).json({
-                message: 'Account exists but unverified. New OTP sent.',
+                message: `Account exists but unverified. New OTP sent to ${otpMethod === 'sms' ? 'phone' : 'email'}.`,
                 email: userExists.email
             });
         }
@@ -92,19 +102,24 @@ const registerUser = asyncHandler(async (req, res) => {
         password: hashedPassword,
         role,
         studentId: role === 'student' ? studentId : undefined,
-        studentProfile: role === 'student' ? studentProfile : undefined,
+        studentProfile: (role === 'student' || otpMethod === 'sms') ? studentProfile : undefined,
         status: 'pending', // Default to pending so they appear in Admin dashboard immediately
         otp,
         otpExpires
     });
 
     if (user) {
-        if (role === 'student' && studentProfile && studentProfile.phoneNumber) {
-            try { await twilioService.sendVerificationSMS(studentProfile.phoneNumber); } catch (e) { }
+        if (otpMethod === 'sms') {
+            if (!user.studentProfile || !user.studentProfile.phoneNumber) {
+                res.status(400);
+                throw new Error('Phone number is required for SMS OTP');
+            }
+            try { await twilioService.sendVerificationSMS(user.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+        } else {
+            await emailService.sendOTPEmail(email, otp);
         }
-        await emailService.sendOTPEmail(email, otp);
         res.status(201).json({
-            message: 'Registration successful. OTP sent to email.',
+            message: `Registration successful. OTP sent to ${otpMethod === 'sms' ? 'phone' : 'email'}.`,
             email: user.email,
             status: 'unverified'
         });
@@ -120,7 +135,7 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/forgot-password
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
-    const { email } = req.body;
+    const { email, otpMethod } = req.body;
 
     const user = await User.findOne({ email });
 
@@ -135,12 +150,17 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     await user.save();
 
-    if (user.studentProfile && user.studentProfile.phoneNumber) {
-        try { await twilioService.sendVerificationSMS(user.studentProfile.phoneNumber); } catch (e) { }
+    if (otpMethod === 'sms') {
+        if (!user.studentProfile || !user.studentProfile.phoneNumber) {
+            res.status(400);
+            throw new Error('No phone number associated with this account. Please use Email OTP.');
+        }
+        try { await twilioService.sendVerificationSMS(user.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+    } else {
+        await emailService.sendOTPEmail(email, otp);
     }
-    await emailService.sendOTPEmail(email, otp);
 
-    res.json({ message: 'OTP sent to your email.' });
+    res.json({ message: `OTP sent to your ${otpMethod === 'sms' ? 'phone' : 'email'}.` });
     await logAction(user.id, 'FORGOT_PASSWORD', 'Requested password reset OTP', req);
 });
 
