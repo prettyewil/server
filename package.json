@@ -27,7 +27,8 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.13",
-    "twilio": "^5.12.2"
+    "twilio": "^5.12.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

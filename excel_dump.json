@@ -1,0 +1,970 @@
+{
+  "Summary of Test Execution": [
+    {
+      "System Name:": "Test Date:"
+    },
+    {
+      "System Name:": "Test Executed By:"
+    },
+    {
+      "System Name:": "Summary of Test Execution"
+    },
+    {
+      "System Name:": "Test Cycle:",
+      "The DormSync System": 1
+    },
+    {
+      "System Name:": "Overall Pass Rate:",
+      "The DormSync System": "#DIV/0!"
+    },
+    {
+      "System Name:": "Overall Fail Rate:",
+      "The DormSync System": "#DIV/0!"
+    }
+  ],
+  "Test Cases Executed": [
+    {
+      "Test Case #": "AUTH-001",
+      "Test Case Description": "Login – Valid Email/Password (All Roles)",
+      "Test Steps": "1. Navigate to DormSync login page.\n2. Select email/password option.\n3. Enter valid Buksu email and password.\n4. Click Login.",
+      "Test Data": "Email: superadmin@buksu.edu.ph\nPassword: P@ssw0rd!2025",
+      "Expected Result": "User is redirected to role-specific dashboard."
+    },
+    {
+      "Test Case #": "AUTH-002",
+      "Test Case Description": "Login – Invalid Password",
+      "Test Steps": "1. Enter registered email.\n2. Enter incorrect password.\n3. Click Login.",
+      "Test Data": "Email: superadmin@buksu.edu.ph\nPassword: wrongpass",
+      "Expected Result": "Error message: \"Invalid email or password.\""
+    },
+    {
+      "Test Case #": "AUTH-003",
+      "Test Case Description": "Login – Non‑existent Email",
+      "Test Steps": "1. Enter unregistered email.\n2. Enter any password.\n3. Click Login.",
+      "Test Data": "Email: unknown@buksu.edu.ph\nPassword: anything123",
+      "Expected Result": "Error message: \"Account not found.\""
+    },
+    {
+      "Test Case #": "AUTH-004",
+      "Test Case Description": "Login – Google OAuth (Valid)",
+      "Test Steps": "1. Click \"Continue with Google\".\n2. Select a @buksu.edu.ph Google account.\n3. Authenticate.",
+      "Test Data": "Google account: student@buksu.edu.ph",
+      "Expected Result": "User is logged in and redirected to dashboard."
+    },
+    {
+      "Test Case #": "AUTH-005",
+      "Test Case Description": "Login – Google OAuth (Non‑institutional Email)",
+      "Test Steps": "1. Click \"Continue with Google\".\n2. Select a personal Gmail account (e.g., @gmail.com).",
+      "Test Data": "Gmail account: john.doe@gmail.com",
+      "Expected Result": "Error message: \"Please use your @buksu.edu.ph email.\""
+    },
+    {
+      "Test Case #": "AUTH-006",
+      "Test Case Description": "Login – Phone OTP (Valid)",
+      "Test Steps": "1. Enter registered phone number.\n2. Click \"Send OTP\".\n3. Enter valid OTP.",
+      "Test Data": "Phone: +639123456789\nOTP: 123456",
+      "Expected Result": "User is logged in."
+    },
+    {
+      "Test Case #": "AUTH-007",
+      "Test Case Description": "Login – Phone OTP (Invalid OTP)",
+      "Test Steps": "1. Enter registered phone number.\n2. Enter wrong OTP.",
+      "Test Data": "Phone: +639123456789\nOTP: 000000",
+      "Expected Result": "Error message: \"Invalid OTP.\""
+    },
+    {
+      "Test Case #": "AUTH-008",
+      "Test Case Description": "Password Reset – Email",
+      "Test Steps": "1. Click \"Forgot Password\".\n2. Enter registered email.\n3. Click \"Send Reset Link\".\n4. Open email and click link.\n5. Enter new password and confirm.",
+      "Test Data": "Email: staff@buksu.edu.ph\nNew password: NewP@ssw0rd!",
+      "Expected Result": "Success message: \"Password updated.\" User can login with new password."
+    },
+    {
+      "Test Case #": "AUTH-009",
+      "Test Case Description": "Password Reset – SMS",
+      "Test Steps": "1. Click \"Forgot Password\".\n2. Enter registered phone.\n3. Receive SMS with reset code.\n4. Enter code and new password.",
+      "Test Data": "Phone: +639123456789\nReset code: 654321\nNew password: SMSp@ss!",
+      "Expected Result": "Success message."
+    },
+    {
+      "Test Case #": "AUTH-011",
+      "Test Case Description": "AUTH-012",
+      "Test Steps": "AUTH-013",
+      "Test Data": "AUTH-014",
+      "Expected Result": "AUTH-015"
+    },
+    {
+      "Test Case #": "AUTH-012",
+      "Test Case Description": "Logout",
+      "Test Steps": "1. After login, click \"Logout\" button.",
+      "Expected Result": "User is logged out and redirected to role selection/login page."
+    },
+    {
+      "Test Case #": "AUTH-013",
+      "Test Case Description": "Super Admin – System Configuration",
+      "Test Steps": "1. Login as Super Admin.\n2. Navigate to \"System Settings\".\n3. Modify a configuration (e.g., backup frequency, session timeout).\n4. Save changes.",
+      "Test Data": "Backup frequency: 15 minutes\nSession timeout: 45 minutes",
+      "Expected Result": "Changes are saved and applied system‑wide."
+    },
+    {
+      "Test Case #": "AUTH-014",
+      "Test Case Description": "Super Admin – View Audit Logs",
+      "Test Steps": "1. Go to \"Audit Logs\".\n2. View full list of system events.",
+      "Expected Result": "All user actions (logins, payments, assignments, etc.) are displayed with timestamps and user info."
+    },
+    {
+      "Test Case #": "AUTH-015",
+      "Test Case Description": "Super Admin – Filter Audit Logs",
+      "Test Steps": "1. Open Audit Logs.\n2. Filter by date range, user, or action type.",
+      "Test Data": "Date: 2025-02-01 to 2025-02-07\nAction: Login",
+      "Expected Result": "Only matching log entries are shown."
+    },
+    {
+      "Test Case #": "AUTH-016",
+      "Test Case Description": "Super Admin – Manual Database Backup",
+      "Test Steps": "1. Navigate to \"Backup Management\".\n2. Click \"Create Backup Now\".\n3. Check server backup directory.",
+      "Expected Result": "A new timestamped JSON backup file is created in `server/backups/`."
+    },
+    {
+      "Test Case #": "AUTH-017",
+      "Test Case Description": "Super Admin – Automatic Backup Execution",
+      "Test Steps": "1. Verify cron job is configured.\n2. Wait 10 minutes (or configured interval).\n3. Check backup folder.",
+      "Test Data": "Backup schedule: every 10 minutes",
+      "Expected Result": "A new backup file appears with timestamp matching the interval."
+    },
+    {
+      "Test Case #": "AUTH-018",
+      "Test Case Description": "Super Admin – Restore from Backup",
+      "Test Steps": "1. Go to Backup Management.\n2. Select a backup file.\n3. Click \"Restore\".\n4. Confirm restoration.",
+      "Test Data": "Backup file: backup-2025-02-13T10-30-00.json",
+      "Expected Result": "System restores data to the point of backup; confirmation message shown."
+    },
+    {
+      "Test Case #": "AUTH-019",
+      "Test Case Description": "Super Admin – Cleanup Old Backups",
+      "Test Steps": "1. Set retention policy to 7 days.\n2. Manually trigger cleanup or wait for scheduled job.\n3. Verify backups older than 7 days are deleted.",
+      "Test Data": "Retention: 7 days",
+      "Expected Result": "Files older than 7 days are removed from backup directory."
+    },
+    {
+      "Test Case #": "AUTH-020",
+      "Test Case Description": "Super Admin – Promote User to Manager",
+      "Test Steps": "1. Navigate to User Management.\n2. Search for a Staff user.\n3. Edit role, change to \"Manager\".\n4. Save.",
+      "Test Data": "Staff email: staff@buksu.edu.ph\nNew role: Manager",
+      "Expected Result": "User's role is updated; user now has Manager permissions."
+    },
+    {
+      "Test Case #": "AUTH-021",
+      "Test Case Description": "Super Admin – Demote Manager to Staff",
+      "Test Steps": "1. Find a Manager.\n2. Change role to \"Staff\".\n3. Save.",
+      "Test Data": "Manager email: manager@buksu.edu.ph\nNew role: Staff",
+      "Expected Result": "Role demoted successfully."
+    },
+    {
+      "Test Case #": "AUTH-022",
+      "Test Case Description": "Super Admin – Assign Super Admin Role",
+      "Test Steps": "1. Select an Admin user.\n2. Assign \"Super Admin\" role.\n3. Save.",
+      "Test Data": "Admin email: admin@buksu.edu.ph\nNew role: Super Admin",
+      "Expected Result": "User becomes Super Admin with full system access."
+    },
+    {
+      "Test Case #": "AUTH-023",
+      "Test Case Description": "Super Admin – View All Modules",
+      "Test Steps": "1. After login, verify navigation menu.\n2. Attempt to access every module (Users, Rooms, Payments, Maintenance, Tasks, Logs, Settings, Backups).",
+      "Expected Result": "All modules are accessible; no permission errors."
+    },
+    {
+      "Test Case #": "AUTH-024",
+      "Test Case Description": "Super Admin – Add New Admin User",
+      "Test Steps": "1. Go to User Management > Add User.\n2. Fill in details and select role \"Admin\".\n3. Submit.",
+      "Test Data": "Email: newadmin@buksu.edu.ph\nFirst: Anna\nLast: Admin\nPassword: Admin@123",
+      "Expected Result": "New Admin account created; user can login with provided credentials."
+    },
+    {
+      "Test Case #": "AUTH-025",
+      "Test Case Description": "Manager – Login",
+      "Test Steps": "1. Login as Manager using valid credentials.",
+      "Test Data": "Email: manager@buksu.edu.ph\nPassword: Manager@2025",
+      "Expected Result": "Dashboard shows Manager view (Students, Rooms, Payments)."
+    },
+    {
+      "Test Case #": "AUTH-026",
+      "Test Case Description": "Manager – View Student List",
+      "Test Steps": "1. Navigate to \"Students\".",
+      "Expected Result": "Complete list of registered students is displayed with details."
+    },
+    {
+      "Test Case #": "AUTH-027",
+      "Test Case Description": "Manager – Search Student",
+      "Test Steps": "1. In Student list, enter search term (name, ID, email).\n2. Click search.",
+      "Test Data": "Search: John",
+      "Expected Result": "Only students matching \"John\" appear."
+    },
+    {
+      "Test Case #": "AUTH-028",
+      "Test Case Description": "Manager – Edit Student Details",
+      "Test Steps": "1. Select a student.\n2. Click \"Edit\".\n3. Update name, contact, room.\n4. Save.",
+      "Test Data": "Student: student@buksu.edu.ph\nNew room: 201A",
+      "Expected Result": "Student profile updated; changes visible."
+    },
+    {
+      "Test Case #": "AUTH-029",
+      "Test Case Description": "Manager – Delete Student Account",
+      "Test Steps": "1. Select a student.\n2. Click \"Delete\".\n3. Confirm deletion.",
+      "Test Data": "Student: leaver@buksu.edu.ph",
+      "Expected Result": "Student account is removed; cannot login.",
+      "Remarks": "No thesis displayed successfully with all relevant details \"No functions at all\""
+    },
+    {
+      "Test Case #": "AUTH-030",
+      "Test Case Description": "Manager – View Room Grid",
+      "Test Steps": "1. Go to \"Rooms\".",
+      "Expected Result": "Color‑coded grid shows availability (Green, Red, Yellow).",
+      "Remarks": "no alert messages once accounts deleted."
+    },
+    {
+      "Test Case #": "AUTH-031",
+      "Test Case Description": "Manager – Assign Student to Room",
+      "Test Steps": "1. Select an available room.\n2. Click \"Assign\".\n3. Search and select a student.\n4. Confirm assignment.",
+      "Test Data": "Room: 102B\nStudent: maria@buksu.edu.ph",
+      "Expected Result": "Room status becomes \"Full\" (Red); student is linked to room.",
+      "Remarks": "No notifications functions. on students submissins"
+    },
+    {
+      "Test Case #": "AUTH-032",
+      "Test Case Description": "Manager – Change Room Status to Maintenance",
+      "Test Steps": "1. Select a room.\n2. Change status to \"Maintenance\".\n3. Save.",
+      "Test Data": "Room: 105A",
+      "Expected Result": "Room shows Yellow (Maintenance); cannot assign students."
+    },
+    {
+      "Test Case #": "AUTH-033",
+      "Test Case Description": "Manager – View Payments",
+      "Test Steps": "1. Navigate to \"Payments\".",
+      "Expected Result": "List of all payment transactions with status (pending/verified/rejected).",
+      "Remarks": "Student Details updated even if not following right formats"
+    },
+    {
+      "Test Case #": "AUTH-034",
+      "Test Case Description": "Manager – Verify Payment",
+      "Test Steps": "1. Select a pending payment.\n2. Click \"Verify\".\n3. Confirm.",
+      "Test Data": "Payment ID: PAY-1234",
+      "Expected Result": "Payment status changes to \"verified\"; student balance updated."
+    },
+    {
+      "Test Case #": "AUTH-035",
+      "Test Case Description": "Manager – Reject Payment",
+      "Test Steps": "1. Select a pending payment.\n2. Click \"Reject\".\n3. Provide reason.",
+      "Test Data": "Payment ID: PAY-5678\nReason: Unclear receipt",
+      "Expected Result": "Payment status \"rejected\"; student notified.",
+      "Remarks": "Password not following format"
+    },
+    {
+      "Test Case #": "AUTH-036",
+      "Test Case Description": "Manager – Generate Payment Report",
+      "Test Steps": "1. Go to Reports > Payments.\n2. Select date range.\n3. Click \"Generate\".",
+      "Test Data": "Date: 2025-02-01 to 2025-02-28",
+      "Expected Result": "Report with total revenue and list of payments is displayed/exported."
+    },
+    {
+      "Test Case #": "AUTH-037",
+      "Test Case Description": "Manager – Cannot Access User Management",
+      "Test Steps": "1. Attempt to navigate to \"User Management\" or \"Staff\".\n2. Direct URL access: /admin/users.",
+      "Expected Result": "Access denied message or 403 page."
+    },
+    {
+      "Test Case #": "AUTH-038",
+      "Test Case Description": "Manager – Cannot Modify Roles",
+      "Test Steps": "1. Try to edit a user's role.\n2. Check if role dropdown is disabled/missing.",
+      "Expected Result": "Role field is not editable for Manager."
+    },
+    {
+      "Test Case #": "AUTH-039",
+      "Test Case Description": "Admin – Login",
+      "Test Steps": "1. Login as Admin.",
+      "Test Data": "Email: admin@buksu.edu.ph\nPassword: Admin@123",
+      "Expected Result": "Admin dashboard displayed."
+    },
+    {
+      "Test Case #": "AUTH-040",
+      "Test Case Description": "Admin – Approve Payment",
+      "Test Steps": "1. Go to Payments.\n2. Select pending payment.\n3. Click \"Approve\".",
+      "Test Data": "Payment ID: PAY-9012",
+      "Expected Result": "Status changes to \"verified\"."
+    },
+    {
+      "Test Case #": "AUTH-041",
+      "Test Case Description": "Admin – Reject Payment with Comment",
+      "Test Steps": "1. Select pending payment.\n2. Click \"Reject\".\n3. Enter comment.",
+      "Test Data": "Payment ID: PAY-3456\nComment: Receipt illegible",
+      "Expected Result": "Status \"rejected\"; comment saved."
+    },
+    {
+      "Test Case #": "AUTH-042",
+      "Test Case Description": "Admin – Assign Room to Student",
+      "Test Steps": "1. Go to Rooms.\n2. Select available room.\n3. Click \"Assign Student\".\n4. Choose student.",
+      "Test Data": "Room: 203C\nStudent: james@buksu.edu.ph",
+      "Expected Result": "Room assigned; student sees room in dashboard."
+    },
+    {
+      "Test Case #": "AUTH-043",
+      "Test Case Description": "Admin – Create Announcement",
+      "Test Steps": "1. Go to Announcements.\n2. Click \"New Announcement\".\n3. Enter title, content.\n4. Publish.",
+      "Test Data": "Title: Water Interruption\nContent: Water supply will be off on Mar 5, 8AM-5PM.",
+      "Expected Result": "Announcement appears in feed for all users."
+    },
+    {
+      "Test Case #": "AUTH-044",
+      "Test Case Description": "Admin – Edit Announcement",
+      "Test Steps": "1. Select an existing announcement.\n2. Click \"Edit\".\n3. Modify content.\n4. Save.",
+      "Test Data": "Change date to Mar 6",
+      "Expected Result": "Announcement content is updated."
+    },
+    {
+      "Test Case #": "AUTH-045",
+      "Test Case Description": "Admin – Delete Announcement",
+      "Test Steps": "1. Select an announcement.\n2. Click \"Delete\".\n3. Confirm.",
+      "Test Data": "Announcement ID: ANN-001",
+      "Expected Result": "Announcement removed from feed."
+    },
+    {
+      "Test Case #": "AUTH-046",
+      "Test Case Description": "Admin – Add Staff",
+      "Test Steps": "1. Go to Staff Management.\n2. Click \"Add Staff\".\n3. Fill required fields.\n4. Submit.",
+      "Test Data": "Email: newstaff@buksu.edu.ph\nFirst: Peter\nLast: Parker\nRole: Staff",
+      "Expected Result": "New staff account created; login credentials sent to email."
+    },
+    {
+      "Test Case #": "AUTH-047",
+      "Test Case Description": "Admin – Edit Staff Details",
+      "Test Steps": "1. Select a staff member.\n2. Update name, contact.\n3. Save.",
+      "Test Data": "Staff: staff1@buksu.edu.ph\nNew phone: +639771234567",
+      "Expected Result": "Profile updated."
+    },
+    {
+      "Test Case #": "AUTH-048",
+      "Test Case Description": "Admin – Delete Staff",
+      "Test Steps": "1. Select a staff member.\n2. Click \"Delete\".\n3. Confirm.",
+      "Test Data": "Staff: inactive@buksu.edu.ph",
+      "Expected Result": "Staff account deactivated/deleted."
+    },
+    {
+      "Test Case #": "AUTH-049",
+      "Test Case Description": "Admin – View History/Reports",
+      "Test Steps": "1. Navigate to \"History\" or \"Activity Logs\".\n2. View recent actions.",
+      "Expected Result": "List of actions (login, assignments, etc.) is displayed."
+    },
+    {
+      "Test Case #": "AUTH-050",
+      "Test Case Description": "Admin – Search Student/Staff",
+      "Test Steps": "1. Use global search.\n2. Enter name or email.",
+      "Test Data": "Search: maria",
+      "Expected Result": "Results show matching students and staff."
+    },
+    {
+      "Test Case #": "AUTH-051",
+      "Test Case Description": "Staff – Registration (Self‑register)",
+      "Test Steps": "1. Go to login page.\n2. Click \"Register\".\n3. Fill form with Buksu email.\n4. Submit.",
+      "Test Data": "Email: dormstaff@buksu.edu.ph\nFirst: Jane\nLast: Doe\nPassword: Staff@2025",
+      "Expected Result": "Account created; pending approval (or auto‑approved based on policy)."
+    },
+    {
+      "Test Case #": "AUTH-052",
+      "Test Case Description": "Staff – Login",
+      "Test Steps": "1. Login with valid credentials.",
+      "Test Data": "Email: dormstaff@buksu.edu.ph\nPassword: Staff@2025",
+      "Expected Result": "Staff dashboard appears."
+    },
+    {
+      "Test Case #": "AUTH-053",
+      "Test Case Description": "Staff – Password Reset",
+      "Test Steps": "1. Use \"Forgot Password\".\n2. Reset via email/SMS.",
+      "Test Data": "Email: dormstaff@buksu.edu.ph",
+      "Expected Result": "Password reset successful."
+    },
+    {
+      "Test Case #": "AUTH-054",
+      "Test Case Description": "Staff – View Dorm Assignments",
+      "Test Steps": "1. Go to \"Rooms\" or \"Assignments\".",
+      "Expected Result": "List of rooms and assigned students displayed."
+    },
+    {
+      "Test Case #": "AUTH-055",
+      "Test Case Description": "Staff – Update Maintenance Status",
+      "Test Steps": "1. Go to Maintenance Requests.\n2. Select an open ticket.\n3. Change status to \"In Progress\".\n4. Add comment.\n5. Save.",
+      "Test Data": "Ticket: MNT-101\nStatus: In Progress\nComment: Inspected, awaiting parts",
+      "Expected Result": "Status updated; student sees update."
+    },
+    {
+      "Test Case #": "AUTH-056",
+      "Test Case Description": "Staff – Resolve Maintenance Ticket",
+      "Test Steps": "1. Select a ticket.\n2. Change status to \"Resolved\".\n3. Add resolution notes.",
+      "Test Data": "Ticket: MNT-102\nNotes: Repaired sink",
+      "Expected Result": "Ticket closed; student receives notification."
+    },
+    {
+      "Test Case #": "AUTH-057",
+      "Test Case Description": "Staff – Take Attendance (Curfew Check‑in)",
+      "Test Steps": "1. Go to \"Attendance\".\n2. Scan student QR code or search student.\n3. Mark check‑in.",
+      "Test Data": "Student: john@buksu.edu.ph\nTime: 10:00 PM",
+      "Expected Result": "Attendance log records entry with timestamp."
+    },
+    {
+      "Test Case #": "AUTH-058",
+      "Test Case Description": "Staff – Record Check‑out",
+      "Test Steps": "1. Search student.\n2. Mark check‑out.",
+      "Test Data": "Student: john@buksu.edu.ph\nTime: 6:30 AM",
+      "Expected Result": "Check‑out recorded."
+    },
+    {
+      "Test Case #": "AUTH-059",
+      "Test Case Description": "Staff – View Floor Plans",
+      "Test Steps": "1. Navigate to \"Floor Plans\".",
+      "Expected Result": "Interactive floor plan image/map is displayed."
+    },
+    {
+      "Test Case #": "AUTH-060",
+      "Test Case Description": "Staff – Assign Cleaning Task",
+      "Test Steps": "1. Go to \"Cleaning Schedule\".\n2. Create a new task.\n3. Assign to staff member.\n4. Set date.",
+      "Test Data": "Task: Vacuum hallway\nAssigned to: staff2@buksu.edu.ph\nDate: 2025-02-14",
+      "Expected Result": "Task appears in assignee's schedule."
+    },
+    {
+      "Test Case #": "AUTH-061",
+      "Test Case Description": "Staff – Mark Cleaning Task as Done",
+      "Test Steps": "1. View assigned tasks.\n2. Select task.\n3. Click \"Complete\".",
+      "Test Data": "Task ID: CLN-001",
+      "Expected Result": "Task status becomes \"Completed\"."
+    },
+    {
+      "Test Case #": "AUTH-062",
+      "Test Case Description": "Student – Registration",
+      "Test Steps": "1. Go to registration page.\n2. Enter required fields with @buksu.edu.ph email.\n3. Submit.",
+      "Test Data": "Email: newstudent@buksu.edu.ph\nFirst: Alice\nLast: Brown\nPassword: Student@2025",
+      "Expected Result": "Student account created; redirected to login."
+    },
+    {
+      "Test Case #": "AUTH-063",
+      "Test Case Description": "Student – Login (Email/Password)",
+      "Test Steps": "1. Login with email and password.",
+      "Test Data": "Email: alice@buksu.edu.ph\nPassword: Student@2025",
+      "Expected Result": "Student dashboard displayed."
+    },
+    {
+      "Test Case #": "AUTH-064",
+      "Test Case Description": "Student – Google Login",
+      "Test Steps": "1. Click \"Continue with Google\".\n2. Select @buksu.edu.ph account.",
+      "Test Data": "Google: alice@buksu.edu.ph",
+      "Expected Result": "Login successful; redirected to dashboard."
+    },
+    {
+      "Test Case #": "AUTH-065",
+      "Test Case Description": "Student – Password Reset",
+      "Test Steps": "1. Use \"Forgot Password\".\n2. Reset via email.",
+      "Test Data": "Email: alice@buksu.edu.ph",
+      "Expected Result": "Password reset link sent; works."
+    },
+    {
+      "Test Case #": "AUTH-066",
+      "Test Case Description": "Student – Submit Maintenance Request",
+      "Test Steps": "1. Go to \"Maintenance\".\n2. Click \"New Request\".\n3. Fill title, description, urgency.\n4. Submit.",
+      "Test Data": "Title: Broken faucet\nDescription: Leaking under sink\nUrgency: Medium",
+      "Expected Result": "Request created with status \"Pending\"."
+    },
+    {
+      "Test Case #": "AUTH-067",
+      "Test Case Description": "Student – View Maintenance Request Status",
+      "Test Steps": "1. Navigate to \"My Requests\".\n2. View list and status of submitted tickets.",
+      "Expected Result": "All requests with current status (Pending, In Progress, Resolved) are shown."
+    },
+    {
+      "Test Case #": "AUTH-068",
+      "Test Case Description": "Student – View Payment History",
+      "Test Steps": "1. Go to \"Payments\".\n2. View transaction history.",
+      "Expected Result": "List of past payments, amounts, dates, and statuses."
+    },
+    {
+      "Test Case #": "AUTH-069",
+      "Test Case Description": "Student – Upload Proof of Payment",
+      "Test Steps": "1. Go to \"Payments\".\n2. Click \"Make Payment\".\n3. Enter amount, upload receipt (image/PDF).\n4. Submit.",
+      "Test Data": "Amount: 1500\nReceipt: receipt_mar.pdf",
+      "Expected Result": "Payment marked as \"pending\" awaiting admin verification."
+    },
+    {
+      "Test Case #": "AUTH-070",
+      "Test Case Description": "Student – Receive Notifications",
+      "Test Steps": "1. Admin/Staff triggers notification (payment verified, maintenance update, announcement).\n2. Check notification bell or email.",
+      "Expected Result": "Notification appears in‑app and/or email sent."
+    },
+    {
+      "Test Case #": "AUTH-071",
+      "Test Case Description": "Student – View Assigned Cleaning Tasks",
+      "Test Steps": "1. Check dashboard or \"Tasks\" tab.",
+      "Expected Result": "Display of any cleaning duties assigned to the student (e.g., `Clean room 202`)."
+    },
+    {
+      "Test Case #": "AUTH-072",
+      "Test Case Description": "Student – View Current Room Status",
+      "Test Steps": "1. Dashboard shows assigned room.\n2. Click on room for details.",
+      "Expected Result": "Room number, bed assignment, and any maintenance status shown."
+    },
+    {
+      "Test Case #": "AUTH-073",
+      "Test Case Description": "Student – Update Profile",
+      "Test Steps": "1. Go to \"Profile\".\n2. Edit name, contact, emergency contact.\n3. Save.",
+      "Test Data": "New emergency contact: 09179876543",
+      "Expected Result": "Profile updated successfully."
+    },
+    {
+      "Test Case #": "AUTH-074",
+      "Test Case Description": "Student – Invalid Name Format (Negative)",
+      "Test Steps": "1. In profile edit, enter name with numbers/symbols.\n2. Save.",
+      "Test Data": "Name: Alice123!",
+      "Expected Result": "Error message: \"Please enter a valid name.\""
+    },
+    {
+      "Test Case #": "AUTH-075",
+      "Test Case Description": "Student – Weak Password (Negative)",
+      "Test Steps": "1. Change password to less than 10 chars, no uppercase/special.\n2. Save.",
+      "Test Data": "Password: pass123",
+      "Expected Result": "Error message: \"Password must be at least 10 characters, include uppercase, lowercase, number, and special character.\""
+    },
+    {
+      "Test Case #": "AUTH-076",
+      "Test Case Description": "Scheduling – Create Task with Google Calendar Sync",
+      "Test Steps": "1. Login as Admin/Manager.\n2. Go to Tasks.\n3. Create a new task, enable \"Sync to Google Calendar\".\n4. Save.",
+      "Test Data": "Title: Inspect fire extinguishers\nDate: 2025-02-20\nAssigned to: staff@buksu.edu.ph",
+      "Expected Result": "Task created; Google Calendar invite sent to assignee; googleEventId stored in DB."
+    },
+    {
+      "Test Case #": "AUTH-077",
+      "Test Case Description": "Scheduling – Update Task (Google Sync)",
+      "Test Steps": "1. Edit existing synced task.\n2. Change date/time.\n3. Save.",
+      "Test Data": "New date: 2025-02-21",
+      "Expected Result": "Google Calendar event updated."
+    },
+    {
+      "Test Case #": "AUTH-078",
+      "Test Case Description": "Scheduling – Delete Task",
+      "Test Steps": "1. Delete a synced task.\n2. Confirm.",
+      "Test Data": "Task ID: TSK-005",
+      "Expected Result": "Task removed; Google Calendar event cancelled/deleted."
+    },
+    {
+      "Test Case #": "AUTH-079",
+      "Test Case Description": "Activity Log – Record Login",
+      "Test Steps": "1. User logs in.\n2. Check Audit Logs.",
+      "Test Data": "User: admin@buksu.edu.ph",
+      "Expected Result": "Log entry with timestamp, user, action: \"Login successful\"."
+    },
+    {
+      "Test Case #": "AUTH-080",
+      "Test Case Description": "Activity Log – Record Failed Login",
+      "Test Steps": "1. Attempt invalid login.\n2. Check logs.",
+      "Test Data": "Email: wrong@buksu.edu.ph",
+      "Expected Result": "Log entry: \"Failed login attempt\" with email and reason."
+    },
+    {
+      "Test Case #": "AUTH-081",
+      "Test Case Description": "Activity Log – Payment Verification",
+      "Test Steps": "1. Admin verifies payment.\n2. Check logs.",
+      "Test Data": "Payment: PAY-1234",
+      "Expected Result": "Log entry: \"Admin verified payment #PAY-1234\"."
+    },
+    {
+      "Test Case #": "AUTH-082",
+      "Test Case Description": "Activity Log – Room Assignment",
+      "Test Steps": "1. Admin assigns room.\n2. Check logs.",
+      "Test Data": "Student: student@buksu.edu.ph\nRoom: 101A",
+      "Expected Result": "Log entry: \"Room 101A assigned to student@buksu.edu.ph\"."
+    },
+    {
+      "Test Case #": "AUTH-083",
+      "Test Case Description": "Role‑Based Access – Student Cannot Access Admin Panel",
+      "Test Steps": "1. Login as Student.\n2. Attempt to navigate to /admin or /staff.",
+      "Expected Result": "403 Forbidden or redirect to dashboard."
+    },
+    {
+      "Test Case #": "AUTH-084",
+      "Test Case Description": "Role‑Based Access – Staff Cannot Verify Payments",
+      "Test Steps": "1. Login as Staff.\n2. Go to Payments.\n3. Check if Verify/Reject buttons are present.",
+      "Expected Result": "Buttons not visible/disabled."
+    },
+    {
+      "Test Case #": "AUTH-085",
+      "Test Case Description": "Role‑Based Access – Admin Cannot Promote Roles",
+      "Test Steps": "1. Login as Admin.\n2. Edit user profile.\n3. Check role dropdown.",
+      "Expected Result": "Only \"Staff\" or \"Student\" options? Admin cannot assign Manager/Super Admin."
+    },
+    {
+      "Test Case #": "AUTH-086",
+      "Test Case Description": "Data Encryption – HTTPS",
+      "Test Steps": "1. Use browser dev tools to check protocol.\n2. Verify network requests use HTTPS.",
+      "Expected Result": "All requests are over HTTPS."
+    },
+    {
+      "Test Case #": "AUTH-087",
+      "Test Case Description": "Password Policy Enforcement",
+      "Test Steps": "1. Attempt to set weak password during registration/password change.\n2. Submit.",
+      "Test Data": "Password: short",
+      "Expected Result": "Error: Password must meet complexity requirements."
+    },
+    {
+      "Test Case #": "AUTH-088",
+      "Test Case Description": "Room Management – Add New Room",
+      "Test Steps": "1. Login as Admin/Manager.\n2. Go to Rooms.\n3. Click \"Add Room\".\n4. Enter room number, capacity, description.\n5. Save.",
+      "Test Data": "Room: 301\nCapacity: 4",
+      "Expected Result": "New room appears in grid with status \"Available\"."
+    },
+    {
+      "Test Case #": "AUTH-089",
+      "Test Case Description": "Room Management – Edit Room Details",
+      "Test Steps": "1. Select a room.\n2. Change capacity, description.\n3. Save.",
+      "Test Data": "Room: 301\nNew capacity: 6",
+      "Expected Result": "Room details updated."
+    },
+    {
+      "Test Case #": "AUTH-090",
+      "Test Case Description": "Room Management – Delete Room",
+      "Test Steps": "1. Select an empty room.\n2. Click \"Delete\".\n3. Confirm.",
+      "Test Data": "Room: 301",
+      "Expected Result": "Room removed from system."
+    },
+    {
+      "Test Case #": "AUTH-091",
+      "Test Case Description": "Room Management – Assign Student (with validation)",
+      "Test Steps": "1. Attempt to assign student to a room at full capacity.\n2. Try to assign same student to two rooms.",
+      "Test Data": "Room capacity: 2, already 2 assigned.\nStudent: bob@buksu.edu.ph",
+      "Expected Result": "Error: \"Room is full.\" / \"Student already assigned to a room.\""
+    },
+    {
+      "Test Case #": "AUTH-092",
+      "Test Case Description": "Payment – Duplicate Receipt Upload",
+      "Test Steps": "1. Student uploads receipt for same payment period twice.\n2. Submit.",
+      "Expected Result": "System prevents duplicate or warns."
+    },
+    {
+      "Test Case #": "AUTH-093",
+      "Test Case Description": "Payment – Invalid File Type",
+      "Test Steps": "1. Student uploads .exe file as receipt.\n2. Submit.",
+      "Test Data": "File: malicious.exe",
+      "Expected Result": "Error: \"Only images and PDFs are allowed.\""
+    },
+    {
+      "Test Case #": "AUTH-094",
+      "Test Case Description": "Maintenance – Missing Required Fields",
+      "Test Steps": "1. Student submits request without title.\n2. Submit.",
+      "Test Data": "Title: (empty)",
+      "Expected Result": "Error: \"Title is required.\""
+    },
+    {
+      "Test Case #": "AUTH-095",
+      "Test Case Description": "Maintenance – Urgency Levels",
+      "Test Steps": "1. Student creates requests with Low, Medium, High.\n2. Verify staff view shows priority.",
+      "Expected Result": "Urgency tag displayed correctly."
+    },
+    {
+      "Test Case #": "TC-SA-01",
+      "Test Case Description": "Super Admin Login (Valid Credentials)",
+      "Test Steps": "1. Open DormSync login page.\n2. Select Super Admin role.\n3. Enter valid email and password.\n4. Complete reCAPTCHA.\n5. Click Login.",
+      "Test Data": "Email: superadmin@buksu.edu.ph\nPassword: ValidPass@123",
+      "Expected Result": "System authenticates user and redirects to Super Admin dashboard."
+    },
+    {
+      "Test Case #": "TC-SA-02",
+      "Test Case Description": "Super Admin Login (Invalid Password)",
+      "Test Steps": "1. Open login page.\n2. Select Super Admin role.\n3. Enter valid email and wrong password.\n4. Click Login.",
+      "Test Data": "Email: superadmin@buksu.edu.ph\nPassword: Wrong123",
+      "Expected Result": "System denies access and displays error message."
+    },
+    {
+      "Test Case #": "TC-SA-03",
+      "Test Case Description": "View System Dashboard",
+      "Test Steps": "1. Login as Super Admin.\n2. Navigate to Dashboard.",
+      "Test Data": "N/A",
+      "Expected Result": "Dashboard displays occupancy, revenue, maintenance, and logs."
+    },
+    {
+      "Test Case #": "TC-SA-04",
+      "Test Case Description": "Create New Admin Account",
+      "Test Steps": "1. Login.\n2. Open User Management.\n3. Click Add User.\n4. Fill admin details.\n5. Save.",
+      "Test Data": "Name: Maria Cruz\nRole: Admin\nEmail: maria@buksu.edu.ph",
+      "Expected Result": "New admin account is successfully created."
+    },
+    {
+      "Test Case #": "TC-SA-05",
+      "Test Case Description": "Modify User Role",
+      "Test Steps": "1. Login.\n2. Open User Management.\n3. Select user.\n4. Change role.\n5. Save.",
+      "Test Data": "User: Juan Dela Cruz\nNew Role: Staff",
+      "Expected Result": "User role is updated successfully."
+    },
+    {
+      "Test Case #": "TC-SA-06",
+      "Test Case Description": "Delete Staff Account",
+      "Test Steps": "1. Login.\n2. Open User Management.\n3. Select staff account.\n4. Click Delete.\n5. Confirm.",
+      "Test Data": "Staff ID: STF1023",
+      "Expected Result": "Staff account is permanently removed."
+    },
+    {
+      "Test Case #": "TC-SA-07",
+      "Test Case Description": "View Audit Logs",
+      "Test Steps": "1. Login.\n2. Open Logs Module.\n3. Filter by date.\n4. View entries.",
+      "Test Data": "Date Range: Jan 1–Jan 31",
+      "Expected Result": "System displays accurate activity logs."
+    },
+    {
+      "Test Case #": "TC-SA-08",
+      "Test Case Description": "Perform Manual Backup",
+      "Test Steps": "1. Login.\n2. Go to Backup Settings.\n3. Click Backup Now.",
+      "Test Data": "Backup Directory: server/backups/",
+      "Expected Result": "System generates timestamped backup file."
+    },
+    {
+      "Test Case #": "TC-SA-09",
+      "Test Case Description": "Verify Automated Backup",
+      "Test Steps": "1. Login.\n2. Open Backup Logs.\n3. Check latest backup.",
+      "Test Data": "Cron Schedule: Every 10 mins",
+      "Expected Result": "Backup is recorded as successful."
+    },
+    {
+      "Test Case #": "TC-SA-10",
+      "Test Case Description": "Restore Backup File",
+      "Test Steps": "1. Login.\n2. Open Backup Management.\n3. Select backup file.\n4. Click Restore.",
+      "Test Data": "Backup File: backup_2026-02-13.json",
+      "Expected Result": "System restores database successfully."
+    },
+    {
+      "Test Case #": "TC-SA-11",
+      "Test Case Description": "Configure System Settings",
+      "Test Steps": "1. Login.\n2. Open System Settings.\n3. Update parameters.\n4. Save.",
+      "Test Data": "Session Timeout: 15 mins",
+      "Expected Result": "System settings are saved and applied."
+    },
+    {
+      "Test Case #": "TC-SA-12",
+      "Test Case Description": "Enforce Password Policy",
+      "Test Steps": "1. Login.\n2. Open Security Settings.\n3. Update policy.\n4. Save.",
+      "Test Data": "Min Length: 10\nSpecial Char: Required",
+      "Expected Result": "Password policy is enforced system-wide."
+    },
+    {
+      "Test Case #": "TC-SA-13",
+      "Test Case Description": "Monitor Failed Login Attempts",
+      "Test Steps": "1. Login.\n2. Open Security Logs.\n3. Review failed logins.",
+      "Test Data": "Filter: Failed Attempts",
+      "Expected Result": "System displays failed login history."
+    },
+    {
+      "Test Case #": "TC-SA-14",
+      "Test Case Description": "Generate System Report",
+      "Test Steps": "1. Login.\n2. Open Reports.\n3. Select report type.\n4. Export.",
+      "Test Data": "Type: Monthly Summary\nFormat: PDF",
+      "Expected Result": "System generates downloadable report."
+    },
+    {
+      "Test Case #": "TC-SA-15",
+      "Test Case Description": "Logout Super Admin",
+      "Test Steps": "1. Click Logout button.\n2. Confirm action.",
+      "Test Data": "N/A",
+      "Expected Result": "User session ends and returns to login page."
+    }
+  ],
+  "Defects Identified": [
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Deleted emails still visible in the Inbox",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    }
+  ],
+  "Exploratory Testing": [
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Add more alerts on every transactions",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Properly labelled the form, put indicators for error handling",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "identify required fields. ",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "proper use of data for testing",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "Enhance UI/Cosmetics",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "required password to delete accounts and capstone.",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Defect ID": "D001",
+      "Test Case ID": "TC004",
+      "Description": "admin account can't notified.",
+      "Severity": "High",
+      "Status": "Open",
+      "Assigned To": "[to be filled out by system's developers]",
+      "Date Reported": 45347,
+      "Date Fixed": "[to be filled out by system's developers]",
+      "Comments": "During the execution of TC004, the expected result was not met as deleted emails were still visible in the Inbox. This suggests a potential issue with the deletion process not updating the Inbox view correctly. Further investigation needed."
+    },
+    {
+      "Description": "teachers can't view submitted capstones"
+    }
+  ],
+  "Severity Levels Guide": [
+    {
+      "Severity Level": "Critical",
+      "Description": "Issues that completely block or \"stop\" the normal functioning of the system. The software is unusable or a significant part of it is not functioning.",
+      "When to Use": "Use this level when the defect prevents further testing or the software cannot be used at all.",
+      "Guidelines": "Reserved for issues that halt all testing or prevent essential functions.",
+      "Example": "Users are unable to log in to the email system\n"
+    },
+    {
+      "Severity Level": "High",
+      "Description": "Issues that have a significant impact on the functionality, causing major disruptions or impairing the core features.",
+      "When to Use": "Use for defects that have a serious impact on the system but do not completely block its use.",
+      "Guidelines": "Used for severe issues that significantly impact the system but do not completely halt it.",
+      "Example": "Emails sent from the system are not reaching the recipients."
+    },
+    {
+      "Severity Level": "Medium",
+      "Description": "Issues that have a noticeable impact but don't critically affect core functionalities. They may affect non-essential features or have workarounds available.",
+      "When to Use": "Use for defects that are important but not critical to the overall system.",
+      "Guidelines": "Applied to important issues that need attention but don't critically affect core functionalities.",
+      "Example": "Attachments in emails take longer than expected to upload."
+    },
+    {
+      "Severity Level": "Low",
+      "Description": "Issues that have a minor impact on the software. These defects are generally cosmetic or have little effect on system functionality.",
+      "When to Use": "Use for issues that are of low priority, such as minor visual imperfections or inconveniences.",
+      "Guidelines": "For less critical issues that can be addressed after higher severity defects.",
+      "Example": "The spell-check feature is not working in the email composer."
+    },
+    {
+      "Severity Level": "Cosmetic",
+      "Description": "Minor issues that do not affect functionality and have little to no impact on the user experience.",
+      "When to Use": "Use for purely aesthetic issues or other trivial matters that do not impact the software's operation.",
+      "Guidelines": "For issues that are minimal and have no significant impact on functionality.",
+      "Example": "The color of the \"Compose\" button is slightly different from the design specifications."
+    }
+  ]
+}
