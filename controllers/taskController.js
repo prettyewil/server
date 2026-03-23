@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
-const { createEvent, deleteEvent } = require('../services/googleCalendarService');
+const { createEvent, updateEvent, deleteEvent } = require('../services/googleCalendarService');
 const { logAction } = require('../utils/logger');
 
 // @desc    Get all tasks
@@ -116,6 +116,16 @@ const updateTask = async (req, res) => {
         );
 
         // Note: Full sync update to Google Calendar would happen here
+        if (task.googleEventId) {
+            const students = await User.find({
+                'studentProfile.roomNumber': task.assignedRoom,
+                role: 'student'
+            });
+            const attendees = students.map(s => ({ email: s.email }));
+            const taskForGCal = task.toObject();
+            taskForGCal.attendees = attendees;
+            await updateEvent(task.googleEventId, taskForGCal);
+        }
 
         res.json(task);
     } catch (error) {

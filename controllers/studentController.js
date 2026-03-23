@@ -35,12 +35,12 @@ const createStudent = asyncHandler(async (req, res) => {
                 'studentProfile.status': { $in: ['active', 'inactive'] }, // Considering those assigned but not graduated
                 status: { $ne: 'rejected' }
             });
-            
+
             if (currentOccupants >= room.capacity) {
                 res.status(400);
                 throw new Error('Room is already fully occupied.');
             }
-            
+
             roomNumber = room.roomNumber;
         }
     }
@@ -70,6 +70,10 @@ const createStudent = asyncHandler(async (req, res) => {
 
     // Log creation
     await logAction(req.user.id, 'CREATE_STUDENT', `Created student ${email}`, req);
+
+    if (roomNumber !== 'N/A') {
+        await logAction(req.user.id, 'ASSIGN_ROOM', `Assigned room ${roomNumber} to student ${email}`, req);
+    }
 
     res.status(201).json(user);
 });
@@ -102,23 +106,24 @@ const updateStudent = asyncHandler(async (req, res) => {
 
         // Update Room if room_id provided
         if (req.body.room_id) {
-             const room = await Room.findById(req.body.room_id);
-             if (room) {
-                 // Only check capacity if room is actually changing
-                 if (user.studentProfile.roomNumber !== room.roomNumber) {
-                     const currentOccupants = await User.countDocuments({
-                         'studentProfile.roomNumber': room.roomNumber,
-                         'studentProfile.status': { $in: ['active', 'inactive'] },
-                         status: { $ne: 'rejected' }
-                     });
-                     
-                     if (currentOccupants >= room.capacity) {
-                         res.status(400);
-                         throw new Error('Room is already fully occupied.');
-                     }
-                 }
-                 user.studentProfile.roomNumber = room.roomNumber;
-             }
+            const room = await Room.findById(req.body.room_id);
+            if (room) {
+                // Only check capacity if room is actually changing
+                if (user.studentProfile.roomNumber !== room.roomNumber) {
+                    const currentOccupants = await User.countDocuments({
+                        'studentProfile.roomNumber': room.roomNumber,
+                        'studentProfile.status': { $in: ['active', 'inactive'] },
+                        status: { $ne: 'rejected' }
+                    });
+
+                    if (currentOccupants >= room.capacity) {
+                        res.status(400);
+                        throw new Error('Room is already fully occupied.');
+                    }
+                    await logAction(req.user.id, 'ASSIGN_ROOM', `Assigned room ${room.roomNumber} to student ${user.email}`, req);
+                }
+                user.studentProfile.roomNumber = room.roomNumber;
+            }
         }
 
         // Sync user account status with profile status

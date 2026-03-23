@@ -92,6 +92,53 @@ const createEvent = async (task) => {
 };
 
 /**
+ * Updates an event on the calendar.
+ * @param {string} eventId - The Google Calendar event ID
+ * @param {object} task - Task object containing refreshed values
+ */
+const updateEvent = async (eventId, task) => {
+    if (!eventId) return null;
+    try {
+        const auth = getAuthClient();
+
+        const attendees = (task.attendees || []).map(a => ({ email: a.email }));
+
+        const event = {
+            summary: task.title,
+            description: `Task Type: ${task.type}\nArea: ${task.area}\nRoom: ${task.assignedRoom}\nNotes: ${task.notes || 'None'}`,
+            start: {
+                dateTime: new Date(task.dueDate).toISOString(),
+            },
+            end: {
+                dateTime: new Date(new Date(task.dueDate).getTime() + 60 * 60 * 1000).toISOString(),
+            },
+            attendees,
+            reminders: {
+                useDefault: false,
+                overrides: [
+                    { method: 'email', minutes: 24 * 60 },
+                    { method: 'popup', minutes: 10 },
+                ],
+            },
+        };
+
+        const res = await calendar.events.update({
+            auth,
+            calendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
+            eventId: eventId,
+            resource: event,
+            sendUpdates: 'all',
+        });
+
+        console.log('Google Calendar event updated:', res.data.htmlLink);
+        return res.data.id;
+    } catch (error) {
+        console.error('Error updating calendar event:', error.message);
+        return null;
+    }
+};
+
+/**
  * Deletes an event from the calendar.
  * @param {string} eventId - The Google Calendar event ID
  */
@@ -139,6 +186,7 @@ const listHolidays = async () => {
 module.exports = {
     listEvents,
     createEvent,
+    updateEvent,
     deleteEvent,
     listHolidays
 };

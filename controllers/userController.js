@@ -48,9 +48,9 @@ const createStaff = asyncHandler(async (req, res) => {
     const allowedRoles = ['manager', 'staff', 'admin'];
 
     if (role && allowedRoles.includes(role)) {
-        if (role === 'admin' && req.user.role !== 'super_admin') {
+        if ((role === 'admin' || role === 'manager') && req.user.role !== 'super_admin') {
             res.status(403);
-            throw new Error('Only a super admin can create an admin user');
+            throw new Error('Only a super admin can create an admin or manager user');
         }
         assignedRole = role;
     }
@@ -120,7 +120,6 @@ const approveUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Reject user
-// @route   PUT /api/users/:id/reject
 // @access  Admin
 const rejectUser = asyncHandler(async (req, res) => {
     console.log('REJECT USER START:', req.params.id); // DEBUG
@@ -131,28 +130,24 @@ const rejectUser = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    user.status = 'rejected';
-    await user.save();
-
-    // Send email
+    // Send email before deleting
     try {
         const reason = req.body && req.body.reason ? req.body.reason : 'No specific reason provided.';
-        console.log('Sending rejection email to:', user.email); // DEBUG
+        console.log('Sending rejection email to:', user.email);
         await sendRejectionEmail(user, reason);
-        console.log('Rejection email sent successfully'); // DEBUG
+        console.log('Rejection email sent successfully');
     } catch (emailError) {
         console.error('FAILED TO SEND REJECTION EMAIL:', emailError);
-        // Do not crash the request, just log it? Or throw?
-        // If we want to return 500 on email failure, we let it throw.
-        // But maybe we should handle it gracefully?
-        // For debugging, let's log explicitly.
     }
+
+    // Completely delete the user from the database so they can re-register if needed
+    await user.deleteOne();
 
     // Log action
     const reasonLog = req.body && req.body.reason ? req.body.reason : 'No reason provided';
-    await logAction(req.user.id, 'REJECT_USER', `Rejected user: ${user.email}. Reason: ${reasonLog}`, req);
+    await logAction(req.user.id, 'REJECT_USER', `Rejected and deleted user: ${user.email}. Reason: ${reasonLog}`, req);
 
-    res.json({ message: 'User rejected and notified' });
+    res.json({ message: 'User rejected, notified, and removed from database.' });
 });
 
 // @desc    Update user role
@@ -169,10 +164,10 @@ const updateUserRole = asyncHandler(async (req, res) => {
         throw new Error('Invalid role');
     }
 
-    // Only super_admin can assign 'admin' role
-    if (role === 'admin' && req.user.role !== 'super_admin') {
+    // Only super_admin can assign 'admin' or 'manager' role
+    if ((role === 'admin' || role === 'manager') && req.user.role !== 'super_admin') {
         res.status(403);
-        throw new Error('Only a super admin can promote a user to admin');
+        throw new Error('Only a super admin can promote a user to admin or manager');
     }
 
     const user = await User.findById(req.params.id);

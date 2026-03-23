@@ -45,7 +45,27 @@ const checkVerificationSMS = async (phoneNumber, code) => {
     }
 };
 
+const sendCustomSMS = async (phoneNumber, otp) => {
+    if (!client || !process.env.TWILIO_PHONE_NUMBER) {
+        console.warn('Twilio complete configuration (including TWILIO_PHONE_NUMBER) is missing. Logging SMS instead: ', otp);
+        return null;
+    }
+    try {
+        const message = await client.messages.create({
+            body: `Your DormSync verification code is: ${otp}. It will expire in 10 minutes.`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phoneNumber
+        });
+        console.log(`[Twilio] Custom SMS sent to ${phoneNumber}. SID: ${message.sid}`);
+        return message.sid;
+    } catch (error) {
+        console.error('[Twilio] Error sending custom SMS:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     sendVerificationSMS,
-    checkVerificationSMS
+    checkVerificationSMS,
+    sendCustomSMS
 };

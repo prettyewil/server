@@ -4,6 +4,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { logAction } = require('../utils/logger');
+const SystemSettings = require('../models/SystemSettings');
 
 const nodemailer = require('nodemailer');
 const emailService = require('../services/emailService');
@@ -11,12 +12,25 @@ const twilioService = require('../services/twilioService');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Email logic moved to services/emailService.js
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const isStrongPassword = (password) => {
+    const minLength = 10;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    return password.length >= minLength && hasUppercase && hasLowercase && hasNumber && hasSpecial;
+};
 
 // Generate JWT Token
-const generateToken = (id) => {
+const generateToken = async (id) => {
+    let settings = await SystemSettings.findOne();
+    const expiresIn = settings ? `${settings.sessionTimeout}m` : '15m';
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn,
     });
 };
 
@@ -27,12 +41,17 @@ const registerUser = asyncHandler(async (req, res) => {
     // name is now optional/virtual, we expect parts
     const { firstName, lastName, middleInitial, name, email, password, role, studentProfile, studentId, otpMethod } = req.body;
 
+    if (!isStrongPassword(password)) {
+        res.status(400);
+        throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+    }
+
     const userExists = await User.findOne({ email });
 
     if (userExists) {
         // If user exists but is unverified, resend OTP
         if (userExists.status === 'unverified') {
-            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otp = generateOTP();
             userExists.otp = otp;
             userExists.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -61,7 +80,11 @@ const registerUser = asyncHandler(async (req, res) => {
                     res.status(400);
                     throw new Error('Phone number is required for SMS OTP');
                 }
-                try { await twilioService.sendVerificationSMS(userExists.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+                try {
+                    await twilioService.sendCustomSMS(userExists.studentProfile.phoneNumber, otp);
+                } catch (error) {
+                    console.error('Failed to send SMS:', error);
+                }
             } else {
                 await emailService.sendOTPEmail(email, otp);
             }
@@ -80,7 +103,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOTP();
     const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     // Handle name splitting if only old 'name' is provided
@@ -114,7 +137,11 @@ const registerUser = asyncHandler(async (req, res) => {
                 res.status(400);
                 throw new Error('Phone number is required for SMS OTP');
             }
-            try { await twilioService.sendVerificationSMS(user.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+            try {
+                await twilioService.sendCustomSMS(user.studentProfile.phoneNumber, otp);
+            } catch (error) {
+                console.error('Failed to send SMS:', error);
+            }
         } else {
             await emailService.sendOTPEmail(email, otp);
         }
@@ -144,7 +171,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOTP();
     user.otp = otp;
     user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -155,7 +182,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
             res.status(400);
             throw new Error('No phone number associated with this account. Please use Email OTP.');
         }
-        try { await twilioService.sendVerificationSMS(user.studentProfile.phoneNumber); } catch (e) { console.error('SMS Error:', e); }
+        try {
+            await twilioService.sendCustomSMS(user.studentProfile.phoneNumber, otp);
+        } catch (error) {
+            console.error('Failed to send SMS:', error);
+        }
     } else {
         await emailService.sendOTPEmail(email, otp);
     }
@@ -169,6 +200,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // @access  Public
 const resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, newPassword } = req.body;
+
+    if (!isStrongPassword(newPassword)) {
+        res.status(400);
+        throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+    }
 
     const user = await User.findOne({ email }).select('+otp +otpExpires');
 
@@ -291,7 +327,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     console.log('Verifying OTP. User Status:', user.status);
     if (['active', 'pending', 'unverified'].includes(user.status)) {
-        response.token = generateToken(user.id);
+        response.token = await generateToken(user.id);
         console.log('Token generated for user:', user.email);
     } else {
         console.log('No token generated. Status not allowed:', user.status);
@@ -319,7 +355,27 @@ const loginUser = asyncHandler(async (req, res) => {
         ]
     });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user) {
+        await logAction(null, 'LOGIN_FAILED', `Failed login attempt. email: ${identifier}`, req);
+        res.status(404);
+        throw new Error('Account not found');
+    }
+
+    // Check for lockout
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+        res.status(403);
+        const lockDuration = Math.ceil((user.lockUntil - Date.now()) / 60000);
+        throw new Error(`Account locked. Try again in ${lockDuration} minutes.`);
+    }
+
+    if (await bcrypt.compare(password, user.password)) {
+
+        // Reset login attempts on successful match
+        if (user.loginAttempts > 0) {
+            user.loginAttempts = 0;
+            user.lockUntil = undefined;
+            await user.save();
+        }
 
         const allowedRoles = ['admin', 'manager', 'super_admin'];
 
@@ -342,7 +398,7 @@ const loginUser = asyncHandler(async (req, res) => {
             middleInitial: user.middleInitial,
             email: user.email,
             role: user.role,
-            token: generateToken(user.id),
+            token: await generateToken(user.id),
             studentProfile: user.studentProfile,
             studentId: user.studentId,
             status: user.status
@@ -350,8 +406,16 @@ const loginUser = asyncHandler(async (req, res) => {
 
         await logAction(user.id, 'LOGIN', 'User logged in', req);
     } else {
+        user.loginAttempts += 1;
+        if (user.loginAttempts >= 5) {
+            user.lockUntil = Date.now() + 15 * 60 * 1000; // 15 mins
+            await logAction(user.id, 'ACCOUNT_LOCKED', 'Account temporarily locked due to 5 failed attempts', req);
+        }
+        await user.save();
+
+        await logAction(user.id, 'LOGIN_FAILED', 'Failed login attempt. reason: Invalid password', req);
         res.status(401);
-        throw new Error('Invalid email/student ID or password');
+        throw new Error(user.lockUntil && user.lockUntil > Date.now() ? 'Account locked due to too many failed attempts' : 'invalid email or password');
     }
 });
 
@@ -411,6 +475,10 @@ const updateProfile = asyncHandler(async (req, res) => {
 
     // If password is being updated
     if (req.body.password) {
+        if (!isStrongPassword(req.body.password)) {
+            res.status(400);
+            throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+        }
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(req.body.password, salt);
     }
@@ -462,6 +530,11 @@ const googleLogin = asyncHandler(async (req, res) => {
 
     const { name, email, picture, given_name, family_name } = ticket.getPayload();
 
+    if (!email.endsWith('@buksu.edu.ph')) {
+        res.status(400);
+        throw new Error('Please use your @buksu.edu.ph email.');
+    }
+
     let user = await User.findOne({ email });
 
     if (!user) {
@@ -491,7 +564,7 @@ const googleLogin = asyncHandler(async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateToken(user.id),
+            token: await generateToken(user.id),
             status: 'pending',
             studentProfile: user.studentProfile,
             studentId: user.studentId,
@@ -515,7 +588,7 @@ const googleLogin = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user.id),
+        token: await generateToken(user.id),
         studentProfile: user.studentProfile,
         studentId: user.studentId,
         status: user.status
@@ -525,9 +598,103 @@ const googleLogin = asyncHandler(async (req, res) => {
     await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google', req);
 });
 
+// @desc    Request OTP for Login
+// @route   POST /api/auth/login-otp-request
+// @access  Public
+const loginOtpRequest = asyncHandler(async (req, res) => {
+    let { phoneNumber } = req.body;
+
+    // Normalize phone number (handle cases where '09...' is passed instead of '+639...')
+    if (phoneNumber && phoneNumber.startsWith('0')) {
+        phoneNumber = '+63' + phoneNumber.substring(1);
+    }
+
+    const user = await User.findOne({ 
+        'studentProfile.phoneNumber': phoneNumber,
+        role: 'student'
+    });
+
+    if (!user) {
+        res.status(404);
+        throw new Error('Phone number not found');
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    await user.save();
+
+    try {
+        await twilioService.sendCustomSMS(phoneNumber, otp);
+    } catch (error) {
+        console.error('Failed to send SMS:', error);
+    }
+
+    res.json({ message: 'OTP sent to your phone.' });
+});
+
+// @desc    Verify OTP for Login
+// @route   POST /api/auth/login-otp-verify
+// @access  Public
+const loginOtpVerify = asyncHandler(async (req, res) => {
+    let { phoneNumber, otp } = req.body;
+
+    // Normalize phone number (handle cases where '09...' is passed instead of '+639...')
+    if (phoneNumber && phoneNumber.startsWith('0')) {
+        phoneNumber = '+63' + phoneNumber.substring(1);
+    }
+    
+    const user = await User.findOne({ 
+        'studentProfile.phoneNumber': phoneNumber,
+        role: 'student' 
+    }).select('+otp +otpExpires');
+
+    if (!user) {
+        res.status(404);
+        throw new Error('Phone number not found');
+    }
+
+    if (user.otp !== otp || user.otpExpires < Date.now()) {
+        res.status(400);
+        throw new Error('Invalid OTP.');
+    }
+
+    // Check status
+    const allowedRoles = ['admin', 'manager', 'super_admin'];
+    if (!allowedRoles.includes(user.role) && user.status === 'rejected') {
+        res.status(403);
+        throw new Error('Account has been rejected. Contact admin.');
+    }
+
+    // Clear OTP
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    // Log the action
+    await logAction(user.id, 'LOGIN', 'User logged in via Phone OTP', req);
+
+    res.json({
+        _id: user.id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        middleInitial: user.middleInitial,
+        email: user.email,
+        role: user.role,
+        token: await generateToken(user.id),
+        studentProfile: user.studentProfile,
+        studentId: user.studentId,
+        status: user.status
+    });
+});
+
 module.exports = {
     registerUser,
     loginUser,
+    loginOtpRequest,
+    loginOtpVerify,
     googleLogin,
     getMe,
     updateProfile,

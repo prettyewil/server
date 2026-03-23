@@ -82,6 +82,11 @@ const updatePaymentStatus = async (req, res) => {
         }
 
         if (req.file) {
+            // Prevent duplicate receipt upload for already submitted/paid payments
+            if (['submitted', 'paid', 'verified'].includes(payment.status)) {
+                return res.status(400).json({ message: 'A receipt has already been submitted for this payment.' });
+            }
+
             // Save the file buffer and mimetype
             payment.receiptData = req.file.buffer;
             payment.receiptContentType = req.file.mimetype;
@@ -107,8 +112,8 @@ const updatePaymentStatus = async (req, res) => {
             }
         }
 
-        // Allow Admin to update other details (existing logic)
-        if (req.user.role === 'admin') {
+        // Allow Admin/Manager/SuperAdmin to update other details (existing logic)
+        if (['admin', 'manager', 'super_admin'].includes(req.user.role)) {
             const { amount, type, dueDate, notes, student, referenceNumber } = req.body;
             if (amount) payment.amount = amount;
             if (type) payment.type = type;
