@@ -8,7 +8,7 @@ const SystemSettings = require('../models/SystemSettings');
 
 const nodemailer = require('nodemailer');
 const emailService = require('../services/emailService');
-const twilioService = require('../services/twilioService');
+const vonageService = require('../services/vonageService');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -81,9 +81,13 @@ const registerUser = asyncHandler(async (req, res) => {
                     throw new Error('Phone number is required for SMS OTP');
                 }
                 try {
-                    await twilioService.sendCustomSMS(userExists.studentProfile.phoneNumber, otp);
+                    const requestId = await vonageService.sendVerificationSMS(userExists.studentProfile.phoneNumber);
+                    userExists.otp = requestId;
+                    await userExists.save();
                 } catch (error) {
-                    console.error('Failed to send SMS:', error);
+                    console.error('Failed to send SMS via Vonage:', error);
+                    res.status(500);
+                    throw new Error('Failed to send SMS Verification');
                 }
             } else {
                 await emailService.sendOTPEmail(email, otp);
@@ -138,9 +142,11 @@ const registerUser = asyncHandler(async (req, res) => {
                 throw new Error('Phone number is required for SMS OTP');
             }
             try {
-                await twilioService.sendCustomSMS(user.studentProfile.phoneNumber, otp);
+                const requestId = await vonageService.sendVerificationSMS(user.studentProfile.phoneNumber);
+                user.otp = requestId;
+                await user.save();
             } catch (error) {
-                console.error('Failed to send SMS:', error);
+                console.error('Failed to send SMS via Vonage:', error);
             }
         } else {
             await emailService.sendOTPEmail(email, otp);
@@ -183,9 +189,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
             throw new Error('No phone number associated with this account. Please use Email OTP.');
         }
         try {
-            await twilioService.sendCustomSMS(user.studentProfile.phoneNumber, otp);
+            const requestId = await vonageService.sendVerificationSMS(user.studentProfile.phoneNumber);
+            user.otp = requestId;
+            await user.save();
         } catch (error) {
-            console.error('Failed to send SMS:', error);
+            console.error('Failed to send SMS via Vonage:', error);
+            res.status(500);
+            throw new Error('Failed to send SMS Verification');
         }
     } else {
         await emailService.sendOTPEmail(email, otp);
@@ -214,12 +224,15 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 
     let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber) {
+    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
+        // If the 'otp' is likely a Vonage request ID string, test against it
         try {
-            const status = await twilioService.checkVerificationSMS(user.studentProfile.phoneNumber, otp);
+            const status = await vonageService.checkVerificationSMS(user.otp, otp);
             if (status === 'approved') isValid = true;
         } catch (e) { }
     }
+    
+    // Fallback for Email OTP testing
     if (!isValid && user.otp === otp && user.otpExpires > Date.now()) {
         isValid = true;
     }
@@ -254,9 +267,9 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
     }
 
     let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber) {
+    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
         try {
-            const status = await twilioService.checkVerificationSMS(user.studentProfile.phoneNumber, otp);
+            const status = await vonageService.checkVerificationSMS(user.otp, otp);
             if (status === 'approved') isValid = true;
         } catch (e) { }
     }
@@ -285,9 +298,9 @@ const verifyOTP = asyncHandler(async (req, res) => {
     }
 
     let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber) {
+    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
         try {
-            const status = await twilioService.checkVerificationSMS(user.studentProfile.phoneNumber, otp);
+            const status = await vonageService.checkVerificationSMS(user.otp, otp);
             if (status === 'approved') isValid = true;
         } catch (e) { }
     }
@@ -619,16 +632,17 @@ const loginOtpRequest = asyncHandler(async (req, res) => {
         throw new Error('Phone number not found');
     }
 
-    const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    await user.save();
-
     try {
-        await twilioService.sendCustomSMS(phoneNumber, otp);
+        const requestId = await vonageService.sendVerificationSMS(phoneNumber);
+        if (requestId) {
+            user.otp = requestId;
+            user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes (kept for garbage collection safety)
+            await user.save();
+        }
     } catch (error) {
-        console.error('Failed to send SMS:', error);
+        console.error('Failed to send SMS via Vonage:', error);
+        res.status(500);
+        throw new Error('Failed to send SMS');
     }
 
     res.json({ message: 'OTP sent to your phone.' });
@@ -655,9 +669,17 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
         throw new Error('Phone number not found');
     }
 
-    if (user.otp !== otp || user.otpExpires < Date.now()) {
+    let isValid = false;
+    try {
+        const status = await vonageService.checkVerificationSMS(user.otp, otp);
+        if (status === 'approved') isValid = true;
+    } catch (e) { 
+        console.error("Vonage error", e)
+    }
+
+    if (!isValid) {
         res.status(400);
-        throw new Error('Invalid OTP.');
+        throw new Error('Invalid or expired OTP.');
     }
 
     // Check status
