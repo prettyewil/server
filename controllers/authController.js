@@ -8,7 +8,6 @@ const SystemSettings = require('../models/SystemSettings');
 
 const nodemailer = require('nodemailer');
 const emailService = require('../services/emailService');
-const vonageService = require('../services/vonageService');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -69,26 +68,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
             await userExists.save();
 
-            if (otpMethod === 'sms') {
-                if (!userExists.studentProfile || !userExists.studentProfile.phoneNumber) {
-                    res.status(400);
-                    throw new Error('Phone number is required for SMS OTP');
-                }
-                try {
-                    const requestId = await vonageService.sendVerificationSMS(userExists.studentProfile.phoneNumber);
-                    userExists.otp = requestId;
-                    await userExists.save();
-                } catch (error) {
-                    console.error('Failed to send SMS via Vonage:', error);
-                    res.status(500);
-                    throw new Error('Failed to send SMS Verification');
-                }
-            } else {
-                await emailService.sendOTPEmail(email, otp);
-            }
+            await emailService.sendOTPEmail(email, otp);
 
             return res.status(200).json({
-                message: `Account exists but unverified. New OTP sent to ${otpMethod === 'sms' ? 'phone' : 'email'}.`,
+                message: 'Account exists but unverified. New OTP sent to email.',
                 email: userExists.email
             });
         }
@@ -130,23 +113,9 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 
     if (user) {
-        if (otpMethod === 'sms') {
-            if (!user.studentProfile || !user.studentProfile.phoneNumber) {
-                res.status(400);
-                throw new Error('Phone number is required for SMS OTP');
-            }
-            try {
-                const requestId = await vonageService.sendVerificationSMS(user.studentProfile.phoneNumber);
-                user.otp = requestId;
-                await user.save();
-            } catch (error) {
-                console.error('Failed to send SMS via Vonage:', error);
-            }
-        } else {
-            await emailService.sendOTPEmail(email, otp);
-        }
+        await emailService.sendOTPEmail(email, otp);
         res.status(201).json({
-            message: `Registration successful. OTP sent to ${otpMethod === 'sms' ? 'phone' : 'email'}.`,
+            message: 'Registration successful. OTP sent to email.',
             email: user.email,
             status: 'unverified'
         });
@@ -177,25 +146,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     await user.save();
 
-    if (otpMethod === 'sms') {
-        if (!user.studentProfile || !user.studentProfile.phoneNumber) {
-            res.status(400);
-            throw new Error('No phone number associated with this account. Please use Email OTP.');
-        }
-        try {
-            const requestId = await vonageService.sendVerificationSMS(user.studentProfile.phoneNumber);
-            user.otp = requestId;
-            await user.save();
-        } catch (error) {
-            console.error('Failed to send SMS via Vonage:', error);
-            res.status(500);
-            throw new Error('Failed to send SMS Verification');
-        }
-    } else {
-        await emailService.sendOTPEmail(email, otp);
-    }
+    await emailService.sendOTPEmail(email, otp);
 
-    res.json({ message: `OTP sent to your ${otpMethod === 'sms' ? 'phone' : 'email'}.` });
+    res.json({ message: 'OTP sent to your email.' });
     await logAction(user.id, 'FORGOT_PASSWORD', 'Requested password reset OTP', req);
 });
 
@@ -218,19 +171,7 @@ const resetPassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
-        // If the 'otp' is likely a Vonage request ID string, test against it
-        try {
-            const status = await vonageService.checkVerificationSMS(user.otp, otp);
-            if (status === 'approved') isValid = true;
-        } catch (e) { }
-    }
-    
-    // Fallback for Email OTP testing
-    if (!isValid && user.otp === otp && user.otpExpires > Date.now()) {
-        isValid = true;
-    }
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
@@ -261,16 +202,7 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
-        try {
-            const status = await vonageService.checkVerificationSMS(user.otp, otp);
-            if (status === 'approved') isValid = true;
-        } catch (e) { }
-    }
-    if (!isValid && user.otp === otp && user.otpExpires > Date.now()) {
-        isValid = true;
-    }
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
@@ -292,16 +224,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    let isValid = false;
-    if (user.studentProfile && user.studentProfile.phoneNumber && user.otp !== otp) {
-        try {
-            const status = await vonageService.checkVerificationSMS(user.otp, otp);
-            if (status === 'approved') isValid = true;
-        } catch (e) { }
-    }
-    if (!isValid && user.otp === otp && user.otpExpires > Date.now()) {
-        isValid = true;
-    }
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
@@ -611,67 +534,40 @@ const googleLogin = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login-otp-request
 // @access  Public
 const loginOtpRequest = asyncHandler(async (req, res) => {
-    let { phoneNumber } = req.body;
+    const { email } = req.body;
 
-    // Normalize phone number (handle cases where '09...' is passed instead of '+639...')
-    if (phoneNumber && phoneNumber.startsWith('0')) {
-        phoneNumber = '+63' + phoneNumber.substring(1);
-    }
-
-    const user = await User.findOne({ 
-        'studentProfile.phoneNumber': phoneNumber,
-        role: 'student'
-    });
+    const user = await User.findOne({ email });
 
     if (!user) {
         res.status(404);
-        throw new Error('Phone number not found');
+        throw new Error('Email not found');
     }
 
-    try {
-        const requestId = await vonageService.sendVerificationSMS(phoneNumber);
-        if (requestId) {
-            user.otp = requestId;
-            user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes (kept for garbage collection safety)
-            await user.save();
-        }
-    } catch (error) {
-        console.error('Failed to send SMS via Vonage:', error);
-        res.status(500);
-        throw new Error('Failed to send SMS');
-    }
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    res.json({ message: 'OTP sent to your phone.' });
+    await user.save();
+    
+    await emailService.sendOTPEmail(email, otp);
+
+    res.json({ message: 'OTP sent to your email.' });
 });
 
 // @desc    Verify OTP for Login
 // @route   POST /api/auth/login-otp-verify
 // @access  Public
 const loginOtpVerify = asyncHandler(async (req, res) => {
-    let { phoneNumber, otp } = req.body;
+    const { email, otp } = req.body;
 
-    // Normalize phone number (handle cases where '09...' is passed instead of '+639...')
-    if (phoneNumber && phoneNumber.startsWith('0')) {
-        phoneNumber = '+63' + phoneNumber.substring(1);
-    }
-    
-    const user = await User.findOne({ 
-        'studentProfile.phoneNumber': phoneNumber,
-        role: 'student' 
-    }).select('+otp +otpExpires');
+    const user = await User.findOne({ email }).select('+otp +otpExpires');
 
     if (!user) {
         res.status(404);
-        throw new Error('Phone number not found');
+        throw new Error('Email not found');
     }
 
-    let isValid = false;
-    try {
-        const status = await vonageService.checkVerificationSMS(user.otp, otp);
-        if (status === 'approved') isValid = true;
-    } catch (e) { 
-        console.error("Vonage error", e)
-    }
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
