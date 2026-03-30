@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { sendApprovalEmail, sendRejectionEmail } = require('../services/emailService');
 const { logAction } = require('../utils/logger');
 const bcrypt = require('bcryptjs');
+const { validatePassword } = require('../utils/passwordValidator');
 
 // @desc    Get all staff
 // @route   GET /api/users/staff
@@ -37,6 +38,13 @@ const createStaff = asyncHandler(async (req, res) => {
         const parts = name.split(' ');
         fName = parts[0];
         lName = parts.slice(1).join(' ') || '.';
+    }
+
+    // Validate password policy
+    const passwordError = await validatePassword(password);
+    if (passwordError) {
+        res.status(400);
+        throw new Error(passwordError);
     }
 
     // Hash password

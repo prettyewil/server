@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Room = require('../models/Room');
 const { logAction } = require('../utils/logger');
 const bcrypt = require('bcryptjs');
+const { validatePassword } = require('../utils/passwordValidator');
 
 // @desc    Get all students
 // @route   GET /api/students
@@ -45,9 +46,17 @@ const createStudent = asyncHandler(async (req, res) => {
         }
     }
 
+    // Enforce strong default password
+    const defaultPassword = 'Password!123';
+    const passwordError = await validatePassword(defaultPassword);
+    if (passwordError) {
+        res.status(400);
+        throw new Error(`Cannot create student. System password policy is too strict for the default password. (${passwordError})`);
+    }
+
     // Generate default password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('password123', salt); // Default password
+    const hashedPassword = await bcrypt.hash(defaultPassword, salt); // Default password
 
     const user = await User.create({
         firstName: first_name,

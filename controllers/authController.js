@@ -16,14 +16,7 @@ const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const isStrongPassword = (password) => {
-    const minLength = 10;
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasLowercase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    return password.length >= minLength && hasUppercase && hasLowercase && hasNumber && hasSpecial;
-};
+const { validatePassword } = require('../utils/passwordValidator');
 
 // Generate JWT Token
 const generateToken = async (id) => {
@@ -41,9 +34,10 @@ const registerUser = asyncHandler(async (req, res) => {
     // name is now optional/virtual, we expect parts
     const { firstName, lastName, middleInitial, name, email, password, role, studentProfile, studentId, otpMethod } = req.body;
 
-    if (!isStrongPassword(password)) {
+    const passwordError = await validatePassword(password);
+    if (passwordError) {
         res.status(400);
-        throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+        throw new Error(passwordError);
     }
 
     const userExists = await User.findOne({ email });
@@ -211,9 +205,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
 const resetPassword = asyncHandler(async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
-    if (!isStrongPassword(newPassword)) {
+    const passwordError = await validatePassword(newPassword);
+    if (passwordError) {
         res.status(400);
-        throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+        throw new Error(passwordError);
     }
 
     const user = await User.findOne({ email }).select('+otp +otpExpires');
@@ -488,9 +483,10 @@ const updateProfile = asyncHandler(async (req, res) => {
 
     // If password is being updated
     if (req.body.password) {
-        if (!isStrongPassword(req.body.password)) {
+        const passwordError = await validatePassword(req.body.password);
+        if (passwordError) {
             res.status(400);
-            throw new Error('Password must be at least 10 characters, include uppercase, lowercase, number, and special character.');
+            throw new Error(passwordError);
         }
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(req.body.password, salt);

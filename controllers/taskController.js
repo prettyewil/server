@@ -83,16 +83,17 @@ const createTask = async (req, res) => {
             notes
         });
 
-        // Sync with Google Calendar
-        // Attach attendees to task object for service to use (not stored in DB, strictly for GCal)
-        const taskForGCal = task.toObject();
-        taskForGCal.attendees = attendees;
+        // Sync with Google Calendar if requested
+        if (req.body.syncToCalendar) {
+            const taskForGCal = task.toObject();
+            taskForGCal.attendees = attendees;
 
-        const googleEventId = await createEvent(taskForGCal);
+            const googleEventId = await createEvent(taskForGCal);
 
-        if (googleEventId) {
-            task.googleEventId = googleEventId;
-            await task.save();
+            if (googleEventId) {
+                task.googleEventId = googleEventId;
+                await task.save();
+            }
         }
 
         await logAction(req.user.id, 'CREATE_TASK', `Created task '${title}' assigned to Room ${assignedRoom}`, req);
@@ -115,16 +116,29 @@ const updateTask = async (req, res) => {
             { new: true }
         );
 
-        // Note: Full sync update to Google Calendar would happen here
-        if (task.googleEventId) {
-            const students = await User.find({
-                'studentProfile.roomNumber': task.assignedRoom,
-                role: 'student'
-            });
-            const attendees = students.map(s => ({ email: s.email }));
+        const syncToCalendar = req.body.syncToCalendar;
+
+        if (syncToCalendar && !task.googleEventId) {
+            // Create event since it wasn't synced before
+            const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
             const taskForGCal = task.toObject();
-            taskForGCal.attendees = attendees;
+            taskForGCal.attendees = students.map(s => ({ email: s.email }));
+            const googleEventId = await createEvent(taskForGCal);
+            if (googleEventId) {
+                task.googleEventId = googleEventId;
+                await task.save();
+            }
+        } else if (syncToCalendar && task.googleEventId) {
+            // Update existing event
+            const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
+            const taskForGCal = task.toObject();
+            taskForGCal.attendees = students.map(s => ({ email: s.email }));
             await updateEvent(task.googleEventId, taskForGCal);
+        } else if (!syncToCalendar && task.googleEventId) {
+            // Remove from calendar
+            await deleteEvent(task.googleEventId);
+            task.googleEventId = undefined;
+            await task.save();
         }
 
         res.json(task);
