@@ -321,18 +321,18 @@ const loginUser = asyncHandler(async (req, res) => {
             throw new Error('Account has been rejected. Contact admin.');
         }
 
+        // 2FA Injection
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+        
+        await emailService.sendOTPEmail(user.email, otp);
+
         res.json({
-            _id: user.id,
-            name: user.name,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            middleInitial: user.middleInitial,
+            requires2FA: true,
             email: user.email,
-            role: user.role,
-            token: await generateToken(user.id),
-            studentProfile: user.studentProfile,
-            studentId: user.studentId,
-            status: user.status
+            message: 'OTP sent to your email for Two-Factor Authentication.'
         });
 
         await logAction(user.id, 'LOGIN', 'User logged in', req);
@@ -491,16 +491,17 @@ const googleLogin = asyncHandler(async (req, res) => {
 
         await logAction(user.id, 'REGISTER_GOOGLE', 'User registered via Google (Pending Approval)', req);
 
-        return res.status(201).json({
-            _id: user.id,
-            name: user.name,
+        const otp = generateOTP();
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
+        
+        await emailService.sendOTPEmail(user.email, otp);
+
+        res.status(201).json({
+            requires2FA: true,
             email: user.email,
-            role: user.role,
-            token: await generateToken(user.id),
-            status: 'pending',
-            studentProfile: user.studentProfile,
-            studentId: user.studentId,
-            message: 'Registration successful. Complete your profile.'
+            message: 'OTP sent to your email for Two-Factor Authentication.'
         });
     }
 
@@ -515,15 +516,17 @@ const googleLogin = asyncHandler(async (req, res) => {
         // Pending users are allowed to proceed to get a token
     }
 
+    const otp = generateOTP();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save();
+    
+    await emailService.sendOTPEmail(user.email, otp);
+
     res.json({
-        _id: user.id,
-        name: user.name,
+        requires2FA: true,
         email: user.email,
-        role: user.role,
-        token: await generateToken(user.id),
-        studentProfile: user.studentProfile,
-        studentId: user.studentId,
-        status: user.status
+        message: 'OTP sent to your email for Two-Factor Authentication.'
     });
 
     // Log Google login
@@ -604,6 +607,48 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Verify 2FA OTP for Main Login
+// @route   POST /api/auth/verify-2fa
+// @access  Public
+const verify2FA = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email }).select('+otp +otpExpires');
+
+    if (!user) {
+        res.status(404);
+        throw new Error('Email not found');
+    }
+
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
+
+    if (!isValid) {
+        res.status(400);
+        throw new Error('Invalid or expired OTP.');
+    }
+
+    // Clear OTP
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    await logAction(user.id, 'LOGIN_2FA', 'User logged in via 2FA verification', req);
+
+    res.json({
+        _id: user.id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        middleInitial: user.middleInitial,
+        email: user.email,
+        role: user.role,
+        token: await generateToken(user.id),
+        studentProfile: user.studentProfile,
+        studentId: user.studentId,
+        status: user.status
+    });
+});
+
 module.exports = {
     registerUser,
     loginUser,
@@ -615,5 +660,6 @@ module.exports = {
     verifyOTP,
     forgotPassword,
     resetPassword,
-    verifyResetOTP
+    verifyResetOTP,
+    verify2FA
 };

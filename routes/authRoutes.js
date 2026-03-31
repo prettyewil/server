@@ -11,12 +11,14 @@ const {
     verifyOTP, 
     forgotPassword, 
     resetPassword, 
-    verifyResetOTP 
+    verifyResetOTP,
+    verify2FA 
 } = require('../controllers/authController');
 const { protect, protectOnboarding } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/verify-otp', verifyOTP);
+router.post('/verify-2fa', verify2FA);
 router.post('/login', loginUser);
 router.post('/login-otp-request', loginOtpRequest);
 router.post('/login-otp-verify', loginOtpVerify);
