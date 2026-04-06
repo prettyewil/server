@@ -27,6 +27,9 @@ const maintenanceRequestSchema = new mongoose.Schema({
     roomNumber: {
         type: String,
     },
+    googleEventId: {
+        type: String,
+    },
 }, { timestamps: true }); // createdAt is handled by timestamps
 
 module.exports = mongoose.model('MaintenanceRequest', maintenanceRequestSchema);

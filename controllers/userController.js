@@ -24,6 +24,13 @@ const createStaff = asyncHandler(async (req, res) => {
     console.log('Payload from frontend:', req.body);
     console.log('Role extracted:', role);
 
+    // Validate password policy first
+    const passwordError = await validatePassword(password);
+    if (passwordError) {
+        res.status(400);
+        throw new Error(passwordError);
+    }
+
     const userExists = await User.findOne({ email });
     if (userExists) {
         res.status(400);
@@ -40,12 +47,7 @@ const createStaff = asyncHandler(async (req, res) => {
         lName = parts.slice(1).join(' ') || '.';
     }
 
-    // Validate password policy
-    const passwordError = await validatePassword(password);
-    if (passwordError) {
-        res.status(400);
-        throw new Error(passwordError);
-    }
+
 
     // Hash password
     const salt = await bcrypt.genSalt(10);

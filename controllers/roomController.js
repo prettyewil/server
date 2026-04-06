@@ -1,5 +1,6 @@
 const Room = require('../models/Room');
 const User = require('../models/User');
+const { logAction } = require('../utils/logger');
 
 // @desc    Get all rooms
 // @route   GET /api/rooms
@@ -63,6 +64,8 @@ const createRoom = async (req, res) => {
             features
         });
 
+        await logAction(req.user.id, 'CREATE_ROOM', `Created room ${roomNumber}`, req);
+
         res.status(201).json(room);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -85,6 +88,9 @@ const updateRoom = async (req, res) => {
             room.features = req.body.features || room.features;
 
             const updatedRoom = await Room.findByIdAndUpdate(req.params.id, req.body, { new: true });
+            
+            await logAction(req.user.id, 'UPDATE_ROOM', `Updated room ${updatedRoom.roomNumber}`, req);
+            
             res.json(updatedRoom);
         } else {
             res.status(404).json({ message: 'Room not found' });
@@ -103,6 +109,7 @@ const deleteRoom = async (req, res) => {
 
         if (room) {
             await Room.deleteOne({ _id: room._id });
+            await logAction(req.user.id, 'DELETE_ROOM', `Deleted room ${room.roomNumber}`, req);
             res.json({ message: 'Room removed' });
         } else {
             res.status(404).json({ message: 'Room not found' });

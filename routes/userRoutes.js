@@ -16,8 +16,8 @@ router.put('/:id/reject', restrictTo('admin', 'manager', 'super_admin'), rejectU
 router.get('/:id/history', restrictTo('admin', 'manager', 'super_admin'), require('../controllers/userController').getStudentHistory);
 
 // Staff Management
-router.get('/staff', restrictTo('admin', 'manager', 'super_admin'), getStaff);
-router.post('/staff', restrictTo('admin', 'manager', 'super_admin'), createStaff);
+router.get('/staff', restrictTo('admin', 'super_admin'), getStaff);
+router.post('/staff', restrictTo('admin', 'super_admin'), createStaff);
 
 // Admin and Super Admin
 router.put('/:id/role', restrictTo('admin', 'super_admin'), updateUserRole);
