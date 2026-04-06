@@ -38,6 +38,11 @@ const registerUser = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error(passwordError);
     }
+    
+    if (!email.toLowerCase().endsWith('@buksu.edu.ph') && !email.toLowerCase().endsWith('@student.buksu.edu.ph')) {
+        res.status(400);
+        throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
+    }
 
     const userExists = await User.findOne({ email });
 
@@ -489,9 +494,9 @@ const googleLogin = asyncHandler(async (req, res) => {
 
     const { name, email, picture, given_name, family_name } = ticket.getPayload();
 
-    if (!email.endsWith('@buksu.edu.ph')) {
+    if (!email.endsWith('@buksu.edu.ph') && !email.endsWith('@student.buksu.edu.ph')) {
         res.status(400);
-        throw new Error('Please use your @buksu.edu.ph email.');
+        throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
     }
 
     let user = await User.findOne({ email });
