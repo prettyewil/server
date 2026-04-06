@@ -489,9 +489,12 @@ const googleLogin = asyncHandler(async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const fName = given_name || (name && name.split(' ')[0]) || 'Student';
+        const lName = family_name || (name && name.split(' ').slice(1).join(' ')) || 'User';
+
         user = await User.create({
-            firstName: given_name || name.split(' ')[0],
-            lastName: family_name || name.split(' ').slice(1).join(' ') || '.',
+            firstName: fName,
+            lastName: lName,
             // name: name, // Handled by pre-save
             email,
             password: hashedPassword,
@@ -554,7 +557,12 @@ const googleLogin = asyncHandler(async (req, res) => {
 const loginOtpRequest = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+        $or: [
+            { email: email },
+            { studentId: email }
+        ]
+    });
 
     if (!user) {
         res.status(404);
@@ -578,7 +586,12 @@ const loginOtpRequest = asyncHandler(async (req, res) => {
 const loginOtpVerify = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ email }).select('+otp +otpExpires');
+    const user = await User.findOne({
+        $or: [
+            { email: email },
+            { studentId: email }
+        ]
+    }).select('+otp +otpExpires');
 
     if (!user) {
         res.status(404);
