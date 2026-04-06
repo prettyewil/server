@@ -146,10 +146,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
     }
 
     const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    await user.save();
+    await User.updateOne(
+        { _id: user._id }, 
+        { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
+    );
 
     await emailService.sendOTPEmail(email, otp);
 
@@ -184,11 +184,15 @@ const resetPassword = asyncHandler(async (req, res) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    user.otp = undefined;
-    user.otpExpires = undefined;
-
-    await user.save();
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+    
+    await User.updateOne(
+        { _id: user._id }, 
+        { 
+            $set: { password: hashedNewPassword },
+            $unset: { otp: 1, otpExpires: 1 }
+        }
+    );
 
     res.json({ message: 'Password reset successful. Please login.' });
     await logAction(user.id, 'RESET_PASSWORD', 'Password reset successfully', req);
@@ -240,15 +244,18 @@ const verifyOTP = asyncHandler(async (req, res) => {
     // Both staff and students need admin approval now
     user.status = 'pending';
 
-    user.otp = undefined;
-    user.otpExpires = undefined;
-
     // Ensure student profile is active
     if (user.studentProfile) {
         user.studentProfile.status = 'active';
     }
 
-    await user.save();
+    await User.updateOne(
+        { _id: user._id },
+        { 
+            $set: { status: 'pending', studentProfile: user.studentProfile },
+            $unset: { otp: 1, otpExpires: 1 }
+        }
+    );
 
     const response = {
         _id: user.id,
@@ -334,9 +341,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
         // 2FA Injection for everyone
         const otp = generateOTP();
-        user.otp = otp;
-        user.otpExpires = Date.now() + 10 * 60 * 1000;
-        await user.save();
+        await User.updateOne(
+            { _id: user._id }, 
+            { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
+        );
         
         await emailService.sendOTPEmail(user.email, otp);
 
@@ -535,9 +543,10 @@ const googleLogin = asyncHandler(async (req, res) => {
 
     // Require OTP for everyone
     const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save();
+    await User.updateOne(
+        { _id: user._id }, 
+        { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
+    );
     
     await emailService.sendOTPEmail(user.email, otp);
 
@@ -570,10 +579,10 @@ const loginOtpRequest = asyncHandler(async (req, res) => {
     }
 
     const otp = generateOTP();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    await user.save();
+    await User.updateOne(
+        { _id: user._id }, 
+        { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
+    );
     
     await emailService.sendOTPEmail(email, otp);
 
@@ -613,9 +622,10 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     }
 
     // Clear OTP
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
+    await User.updateOne(
+        { _id: user._id },
+        { $unset: { otp: 1, otpExpires: 1 } }
+    );
 
     // Log the action
     await logAction(user.id, 'LOGIN', 'User logged in via Phone OTP', req);
@@ -656,9 +666,10 @@ const verify2FA = asyncHandler(async (req, res) => {
     }
 
     // Clear OTP
-    user.otp = undefined;
-    user.otpExpires = undefined;
-    await user.save();
+    await User.updateOne(
+        { _id: user._id },
+        { $unset: { otp: 1, otpExpires: 1 } }
+    );
 
     await logAction(user.id, 'LOGIN_2FA', 'User logged in via 2FA verification', req);
 
