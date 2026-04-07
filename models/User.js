@@ -104,11 +104,10 @@ userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
 
 // Pre-save hook to ensure 'name' field is populated for backward compatibility
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function () {
     if (this.firstName && this.lastName) {
         this.name = `${this.firstName} ${this.middleInitial ? this.middleInitial + '. ' : ''}${this.lastName}`;
     }
-    next();
 });
 
 
