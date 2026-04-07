@@ -70,8 +70,13 @@ const createTask = async (req, res) => {
             role: 'student'
         });
 
+        // Find administrative staff so they also see the calendar events
+        const staffAndAdmins = await User.find({
+            role: { $in: ['admin', 'super_admin', 'manager', 'staff'] }
+        });
+
         // Prepare attendee list for Google Calendar
-        const attendees = students.map(s => ({ email: s.email }));
+        const attendees = [...students, ...staffAndAdmins].map(u => ({ email: u.email }));
 
         // Create local task 
         let task = await Task.create({
@@ -121,8 +126,9 @@ const updateTask = async (req, res) => {
         if (syncToCalendar && !task.googleEventId) {
             // Create event since it wasn't synced before
             const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
+            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'super_admin', 'manager', 'staff'] } });
             const taskForGCal = task.toObject();
-            taskForGCal.attendees = students.map(s => ({ email: s.email }));
+            taskForGCal.attendees = [...students, ...staffAndAdmins].map(u => ({ email: u.email }));
             const googleEventId = await createEvent(taskForGCal);
             if (googleEventId) {
                 task.googleEventId = googleEventId;
@@ -131,8 +137,9 @@ const updateTask = async (req, res) => {
         } else if (syncToCalendar && task.googleEventId) {
             // Update existing event
             const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
+            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'super_admin', 'manager', 'staff'] } });
             const taskForGCal = task.toObject();
-            taskForGCal.attendees = students.map(s => ({ email: s.email }));
+            taskForGCal.attendees = [...students, ...staffAndAdmins].map(u => ({ email: u.email }));
             await updateEvent(task.googleEventId, taskForGCal);
         } else if (!syncToCalendar && task.googleEventId) {
             // Remove from calendar

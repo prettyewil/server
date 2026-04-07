@@ -67,6 +67,8 @@ const createEvent = async (task) => {
                 dateTime: new Date(new Date(task.dueDate).getTime() + 60 * 60 * 1000).toISOString(),
             },
             attendees,
+            visibility: 'public',
+            guestsCanSeeOtherGuests: true,
             reminders: {
                 useDefault: false,
                 overrides: [
@@ -113,6 +115,8 @@ const updateEvent = async (eventId, task) => {
                 dateTime: new Date(new Date(task.dueDate).getTime() + 60 * 60 * 1000).toISOString(),
             },
             attendees,
+            visibility: 'public',
+            guestsCanSeeOtherGuests: true,
             reminders: {
                 useDefault: false,
                 overrides: [
