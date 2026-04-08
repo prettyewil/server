@@ -1,4 +1,5 @@
 const Announcement = require('../models/Announcement');
+const { logAction } = require('../utils/logger');
 
 // @desc    Get all announcements
 // @route   GET /api/announcements
@@ -25,6 +26,8 @@ const createAnnouncement = async (req, res) => {
             priority,
         });
 
+        await logAction(req.user.id, 'CREATE_ANNOUNCEMENT', `Created announcement: ${title}`, req);
+
         res.status(201).json(announcement);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -48,6 +51,7 @@ const updateAnnouncement = async (req, res) => {
         announcement.priority = priority || announcement.priority;
 
         const updatedAnnouncement = await announcement.save();
+        await logAction(req.user.id, 'UPDATE_ANNOUNCEMENT', `Updated announcement: ${updatedAnnouncement.title}`, req);
         res.status(200).json(updatedAnnouncement);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -64,6 +68,8 @@ const deleteAnnouncement = async (req, res) => {
         if (!announcement) {
             return res.status(404).json({ message: 'Announcement not found' });
         }
+
+        await logAction(req.user.id, 'DELETE_ANNOUNCEMENT', `Deleted announcement: ${announcement.title}`, req);
 
         res.status(200).json({ message: 'Announcement removed' });
     } catch (error) {

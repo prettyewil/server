@@ -1,4 +1,6 @@
 const Attendance = require('../models/Attendance');
+const { logAction } = require('../utils/logger');
+const User = require('../models/User');
 
 // @desc    Get all attendance logs
 // @route   GET /api/attendance
@@ -36,6 +38,12 @@ const getAttendance = async (req, res) => {
 const createAttendance = async (req, res) => {
     try {
         const attendance = await Attendance.create(req.body);
+        
+        // Lookup student email for better log details
+        const student = await User.findById(req.body.student);
+        const studentDetail = student ? ` for ${student.email}` : '';
+        await logAction(req.user.id, 'CREATE_ATTENDANCE', `Recorded attendance'${studentDetail}'`, req);
+
         res.status(201).json(attendance);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -52,6 +60,13 @@ const updateAttendance = async (req, res) => {
             req.body,
             { new: true }
         );
+
+        if (updatedAttendance) {
+            const student = await User.findById(updatedAttendance.student);
+            const studentDetail = student ? ` for ${student.email}` : '';
+            await logAction(req.user.id, 'UPDATE_ATTENDANCE', `Updated attendance record '${studentDetail}'`, req);
+        }
+
         res.json(updatedAttendance);
     } catch (error) {
         res.status(400).json({ message: error.message });

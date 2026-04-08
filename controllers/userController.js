@@ -243,6 +243,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     }
 
     await user.deleteOne();
+    await logAction(req.user.id, 'DELETE_USER', `Deleted user account: ${user.email}`, req);
     res.json({ message: 'User removed' });
 });
 

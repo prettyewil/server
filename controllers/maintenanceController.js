@@ -122,6 +122,8 @@ const updateRequestStatus = async (req, res) => {
             await updateEvent(updatedRequest.googleEventId, taskForGCal);
         }
 
+        await logAction(req.user.id, 'UPDATE_MAINTENANCE_STATUS', `Updated maintenance request status to '${status}' for: ${updatedRequest.title}`, req);
+
         res.status(200).json(updatedRequest);
     } catch (error) {
         res.status(500).json({ message: error.message });
