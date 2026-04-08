@@ -35,11 +35,13 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const passwordError = await validatePassword(password);
     if (passwordError) {
+        await logAction(null, 'REGISTER_FAILED', `Registration failed for ${email}. Reason: password policy (${passwordError})`, req);
         res.status(400);
         throw new Error(passwordError);
     }
     
     if (!email.toLowerCase().endsWith('@buksu.edu.ph') && !email.toLowerCase().endsWith('@student.buksu.edu.ph')) {
+        await logAction(null, 'REGISTER_FAILED', `Registration failed for ${email}. Reason: invalid email domain.`, req);
         res.status(400);
         throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
     }
@@ -80,6 +82,7 @@ const registerUser = asyncHandler(async (req, res) => {
                 email: userExists.email
             });
         }
+        await logAction(userExists._id, 'REGISTER_FAILED', `Registration failed for ${email}. Reason: User already exists.`, req);
         res.status(400);
         throw new Error('User already exists');
     }
@@ -306,8 +309,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
     // Check for lockout
     if (user.lockUntil && user.lockUntil > Date.now()) {
-        res.status(403);
         const lockDuration = Math.ceil((user.lockUntil - Date.now()) / 60000);
+        await logAction(user.id, 'LOGIN_FAILED', `Failed login attempt. Reason: Account locked for ${lockDuration} minutes.`, req);
+        res.status(403);
         throw new Error(`Account locked. Try again in ${lockDuration} minutes.`);
     }
 
@@ -335,6 +339,7 @@ const loginUser = asyncHandler(async (req, res) => {
         // }
 
         if (!allowedRoles.includes(user.role) && user.status === 'rejected') {
+            await logAction(user.id, 'LOGIN_FAILED', 'Failed login attempt. Reason: Account has been rejected.', req);
             res.status(403);
             throw new Error('Account has been rejected. Contact admin.');
         }
@@ -356,16 +361,15 @@ const loginUser = asyncHandler(async (req, res) => {
 
         await logAction(user.id, 'LOGIN', 'User logged in', req);
     } else {
-        await logAction(user.id, 'LOGIN_FAILED', 'Failed login attempt. reason: Invalid password', req);
-        
         user.loginAttempts += 1;
         if (user.loginAttempts >= 5) {
             user.lockUntil = Date.now() + 15 * 60 * 1000; // 15 mins
             await logAction(user.id, 'ACCOUNT_LOCKED', 'Account temporarily locked due to 5 failed attempts', req);
+        } else {
+            await logAction(user.id, 'LOGIN_FAILED', 'Failed login attempt. reason: Invalid password', req);
         }
         await user.save();
 
-        await logAction(user.id, 'LOGIN_FAILED', 'Failed login attempt. reason: Invalid password', req);
         res.status(401);
         throw new Error(user.lockUntil && user.lockUntil > Date.now() ? 'Account locked due to too many failed attempts' : 'invalid email or password');
     }
@@ -484,6 +488,7 @@ const googleLogin = asyncHandler(async (req, res) => {
     const { name, email, picture, given_name, family_name } = ticket.getPayload();
 
     if (!email.endsWith('@buksu.edu.ph') && !email.endsWith('@student.buksu.edu.ph')) {
+        await logAction(null, 'LOGIN_GOOGLE_FAILED', `Google login failed for ${email}. Reason: invalid email domain.`, req);
         res.status(400);
         throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
     }
@@ -535,6 +540,7 @@ const googleLogin = asyncHandler(async (req, res) => {
     if (!allowedRoles.includes(user.role)) {
         // Check if rejected
         if (user.status === 'rejected') {
+            await logAction(user.id, 'LOGIN_GOOGLE_FAILED', 'Google login failed. Reason: account has been rejected.', req);
             res.status(403);
             throw new Error('Account has been rejected. Contact admin.');
         }
@@ -603,6 +609,7 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     }).select('+otp +otpExpires');
 
     if (!user) {
+        await logAction(null, 'LOGIN_FAILED', `Phone OTP verification failed. Reason: account not found for ${email}`, req);
         res.status(404);
         throw new Error('Email not found');
     }
@@ -610,6 +617,7 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
+        await logAction(user.id, 'LOGIN_FAILED', `Phone OTP verification failed for ${email}. Reason: invalid or expired OTP.`, req);
         res.status(400);
         throw new Error('Invalid or expired OTP.');
     }
@@ -617,6 +625,7 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     // Check status
     const allowedRoles = ['admin', 'manager', 'super_admin'];
     if (!allowedRoles.includes(user.role) && user.status === 'rejected') {
+        await logAction(user.id, 'LOGIN_FAILED', `Phone OTP verification failed for ${email}. Reason: account rejected.`, req);
         res.status(403);
         throw new Error('Account has been rejected. Contact admin.');
     }
@@ -654,6 +663,7 @@ const verify2FA = asyncHandler(async (req, res) => {
     const user = await User.findOne({ email }).select('+otp +otpExpires');
 
     if (!user) {
+        await logAction(null, 'LOGIN_2FA_FAILED', `2FA verification failed. Reason: account not found for ${email}`, req);
         res.status(404);
         throw new Error('Email not found');
     }
@@ -661,6 +671,7 @@ const verify2FA = asyncHandler(async (req, res) => {
     const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
+        await logAction(user.id, 'LOGIN_2FA_FAILED', `2FA verification failed for ${email}. Reason: invalid or expired OTP.`, req);
         res.status(400);
         throw new Error('Invalid or expired OTP.');
     }

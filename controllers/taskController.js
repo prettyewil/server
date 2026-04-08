@@ -115,13 +115,27 @@ const createTask = async (req, res) => {
 // @access  Admin
 const updateTask = async (req, res) => {
     try {
+        // Separate calendar sync flag from task data
+        const { syncToCalendar, ...taskData } = req.body;
+
+        // Only pass valid schema fields to the DB update
+        const allowedFields = ['title', 'type', 'area', 'assignedRoom', 'dueDate', 'status', 'notes'];
+        const updatePayload = {};
+        for (const field of allowedFields) {
+            if (taskData[field] !== undefined) {
+                updatePayload[field] = taskData[field];
+            }
+        }
+
         const task = await Task.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updatePayload,
             { new: true }
         );
 
-        const syncToCalendar = req.body.syncToCalendar;
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
 
         if (syncToCalendar && !task.googleEventId) {
             // Create event since it wasn't synced before
