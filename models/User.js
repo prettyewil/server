@@ -87,7 +87,12 @@ const userSchema = new mongoose.Schema({
     },
     lockUntil: {
         type: Number
-    }
+    },
+    /** Seeded test accounts: skip email 2FA on login; password reset accepts OTP `000000`. */
+    skipEmailOtp: {
+        type: Boolean,
+        default: false,
+    },
 }, { timestamps: true });
 
 // Pre-save hook to ensure studentProfile exists only for students?

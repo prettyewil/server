@@ -11,7 +11,7 @@ const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 
 router.route('/')
-    .get(protect, getStudents)
+    .get(protect, restrictTo('admin', 'manager', 'super_admin', 'staff'), getStudents)
     .post(protect, restrictTo('admin', 'manager', 'super_admin'), createStudent);
 
 router.route('/:id')

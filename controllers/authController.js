@@ -179,7 +179,8 @@ const resetPassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    const isValid = user.otp === otp && user.otpExpires > Date.now();
+    const devBypass = user.skipEmailOtp && otp === '000000';
+    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
 
     if (!isValid) {
         res.status(400);
@@ -214,7 +215,8 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    const isValid = user.otp === otp && user.otpExpires > Date.now();
+    const devBypass = user.skipEmailOtp && otp === '000000';
+    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
 
     if (!isValid) {
         res.status(400);
@@ -288,11 +290,17 @@ const verifyOTP = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+    const rawEmail = req.body.email;
+    const { password } = req.body;
 
     // user could adhere to either email address or student ID
     // The frontend sends 'email' field but it could be student ID
-    const identifier = email;
+    const identifier = typeof rawEmail === 'string' ? rawEmail.trim() : '';
+
+    if (!identifier) {
+        res.status(400);
+        throw new Error('Email or student ID is required');
+    }
 
     const user = await User.findOne({
         $or: [
@@ -344,6 +352,26 @@ const loginUser = asyncHandler(async (req, res) => {
             throw new Error('Account has been rejected. Contact admin.');
         }
 
+        if (user.skipEmailOtp) {
+            res.json({
+                requires2FA: false,
+                skipEmailOtp: true,
+                _id: user.id,
+                name: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleInitial: user.middleInitial,
+                email: user.email,
+                role: user.role,
+                token: await generateToken(user.id),
+                studentProfile: user.studentProfile,
+                studentId: user.studentId,
+                status: user.status,
+            });
+            await logAction(user.id, 'LOGIN', 'User logged in (skipEmailOtp seed account)', req);
+            return;
+        }
+
         // 2FA Injection for everyone
         const otp = generateOTP();
         await User.updateOne(
@@ -380,7 +408,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
     // 2024-02-07: Modified to include studentId and name parts
-    const { _id, name, firstName, lastName, middleInitial, email, role, studentProfile, status, studentId } = await User.findById(req.user.id);
+    const { _id, name, firstName, lastName, middleInitial, email, role, studentProfile, status, studentId, skipEmailOtp } = await User.findById(req.user.id);
 
     res.status(200).json({
         id: _id,
@@ -392,7 +420,8 @@ const getMe = asyncHandler(async (req, res) => {
         role,
         studentProfile,
         status,
-        studentId
+        studentId,
+        skipEmailOtp: !!skipEmailOtp,
     });
 });
 
@@ -463,7 +492,8 @@ const updateProfile = asyncHandler(async (req, res) => {
         // token: generateToken(updatedUser.id), // Do not re-issue token to avoid sync issues
         status: updatedUser.status,
         studentProfile: updatedUser.studentProfile,
-        studentId: updatedUser.studentId
+        studentId: updatedUser.studentId,
+        skipEmailOtp: !!updatedUser.skipEmailOtp,
     });
 
     await logAction(updatedUser.id, 'UPDATE_PROFILE', 'User updated profile', req);
@@ -547,6 +577,26 @@ const googleLogin = asyncHandler(async (req, res) => {
         // Pending users are allowed to proceed to get a token
     }
 
+    if (user.skipEmailOtp) {
+        res.json({
+            requires2FA: false,
+            skipEmailOtp: true,
+            _id: user.id,
+            name: user.name,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleInitial: user.middleInitial,
+            email: user.email,
+            role: user.role,
+            token: await generateToken(user.id),
+            studentProfile: user.studentProfile,
+            studentId: user.studentId,
+            status: user.status,
+        });
+        await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google (skipEmailOtp seed account)', req);
+        return;
+    }
+
     // Require OTP for everyone
     const otp = generateOTP();
     await User.updateOne(
@@ -614,7 +664,8 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
         throw new Error('Email not found');
     }
 
-    const isValid = user.otp === otp && user.otpExpires > Date.now();
+    const devBypass = user.skipEmailOtp && otp === '000000';
+    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
 
     if (!isValid) {
         await logAction(user.id, 'LOGIN_FAILED', `Phone OTP verification failed for ${email}. Reason: invalid or expired OTP.`, req);
@@ -650,7 +701,8 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
         token: await generateToken(user.id),
         studentProfile: user.studentProfile,
         studentId: user.studentId,
-        status: user.status
+        status: user.status,
+        skipEmailOtp: !!user.skipEmailOtp,
     });
 });
 
@@ -668,7 +720,8 @@ const verify2FA = asyncHandler(async (req, res) => {
         throw new Error('Email not found');
     }
 
-    const isValid = user.otp === otp && user.otpExpires > Date.now();
+    const devBypass = user.skipEmailOtp && otp === '000000';
+    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
 
     if (!isValid) {
         await logAction(user.id, 'LOGIN_2FA_FAILED', `2FA verification failed for ${email}. Reason: invalid or expired OTP.`, req);
@@ -682,7 +735,7 @@ const verify2FA = asyncHandler(async (req, res) => {
         { $unset: { otp: 1, otpExpires: 1 } }
     );
 
-    await logAction(user.id, 'LOGIN_2FA', 'User logged in via 2FA verification', req);
+    await logAction(user.id, 'LOGIN_2FA', devBypass ? 'User logged in via 2FA (skipEmailOtp dev code)' : 'User logged in via 2FA verification', req);
 
     res.json({
         _id: user.id,
@@ -695,7 +748,8 @@ const verify2FA = asyncHandler(async (req, res) => {
         token: await generateToken(user.id),
         studentProfile: user.studentProfile,
         studentId: user.studentId,
-        status: user.status
+        status: user.status,
+        skipEmailOtp: !!user.skipEmailOtp,
     });
 });
 

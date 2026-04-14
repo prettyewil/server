@@ -24,9 +24,15 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
 
-            // Check if user is active/approved
-            if (req.user.status !== 'active' && req.user.status !== 'approved') {
-                console.log('User status not active/approved:', req.user.status);
+            // Staff and admins may use the app while still "pending" approval; students must be approved/active.
+            const privilegedRoles = ['super_admin', 'admin', 'manager', 'staff'];
+            const statusOk =
+                req.user.status === 'active' ||
+                req.user.status === 'approved' ||
+                (req.user.status === 'pending' && privilegedRoles.includes(req.user.role));
+
+            if (!statusOk) {
+                console.log('User status not allowed for API access:', req.user.status, req.user.role);
                 return res.status(403).json({ message: 'Access denied. Account not verified.', status: req.user.status });
             }
 

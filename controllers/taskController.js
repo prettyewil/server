@@ -34,22 +34,23 @@ const getTasks = async (req, res) => {
             });
         }
 
-        // Fetch holidays
-        const { listHolidays } = require('../services/googleCalendarService');
-        const holidays = await listHolidays();
-        console.log(`Fetched ${holidays.length} holidays`); // Debug log
-
-        // Transform holidays to match Task structure roughly
-        const holidayTasks = holidays.map(h => ({
-            _id: 'holiday-' + h.start,
-            title: h.title,
-            type: 'holiday',
-            area: 'Global',
-            assignedRoom: 'All',
-            dueDate: h.start,
-            status: 'pending', // or 'info'
-            isHoliday: true
-        }));
+        let holidayTasks = [];
+        try {
+            const { listHolidays } = require('../services/googleCalendarService');
+            const holidays = await listHolidays();
+            holidayTasks = (holidays || []).map((h) => ({
+                _id: 'holiday-' + h.start,
+                title: h.title,
+                type: 'holiday',
+                area: 'Global',
+                assignedRoom: 'All',
+                dueDate: h.start,
+                status: 'pending',
+                isHoliday: true,
+            }));
+        } catch (holidayErr) {
+            console.error('Skipping holiday merge for tasks:', holidayErr.message);
+        }
 
         res.json([...filteredTasks, ...holidayTasks]);
     } catch (error) {

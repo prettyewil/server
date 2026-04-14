@@ -1,77 +1,32 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
+const path = require('path');
 const dotenv = require('dotenv');
 
-// Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
-const app = express();
-
-// Middleware
-app.use(express.json());
-app.use(cors({
-    origin: '*', // Allow all origins for debugging
-    credentials: true,
-}));
-app.use(helmet({
-    crossOriginResourcePolicy: false, // Allow loading resources (files/images) from cross-origin
-}));
-app.use(morgan('dev'));
-app.use('/uploads', express.static('uploads'));
-
-app.use('/api/notifications', require('./routes/notificationRoutes'));
-
-// Database Connection
-console.log('Attempting to connect to MongoDB...');
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected successfully'))
-    .catch(err => console.error('MongoDB Connection Error on startup:', err));
-
-// Routes
-const authRoutes = require('./routes/authRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
-const maintenanceRoutes = require('./routes/maintenanceRoutes');
-const announcementRoutes = require('./routes/announcementRoutes');
-const roomRoutes = require('./routes/roomRoutes');
-const attendanceRoutes = require('./routes/attendanceRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const studentRoutes = require('./routes/studentRoutes');
-const userRoutes = require('./routes/userRoutes');
-const logRoutes = require('./routes/logRoutes');
-const settingsRoutes = require('./routes/settingsRoutes');
-const { errorHandler } = require('./middleware/errorMiddleware');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/maintenance', maintenanceRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/logs', logRoutes);
-app.use('/api/settings', settingsRoutes);
-
-app.get('/', (req, res) => {
-    res.send('DormSync API is running');
-});
-
-// Global Error Handler
-app.use(errorHandler);
-
+const { connectDB } = require('./db');
+const app = require('./app');
 const { scheduleBackups } = require('./services/backupService');
 const { scheduleJobs } = require('./services/cronService');
 
-scheduleBackups();
-scheduleJobs();
+console.log('Attempting to connect to MongoDB...');
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+connectDB()
+    .then(() => {
+        console.log('MongoDB Connected successfully');
+
+        if (!process.env.VERCEL) {
+            scheduleBackups();
+            scheduleJobs();
+        } else {
+            console.log('[Server] Skipping in-process cron/backup schedules on Vercel (no persistent process).');
+        }
+
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error('MongoDB Connection Error on startup:', err);
+        process.exit(1);
+    });
