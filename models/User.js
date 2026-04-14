@@ -88,7 +88,7 @@ const userSchema = new mongoose.Schema({
     lockUntil: {
         type: Number
     },
-    /** Seeded test accounts: skip email 2FA on login; password reset accepts OTP `000000`. */
+    /** Legacy flag; auth always requires real email OTP (no bypass). */
     skipEmailOtp: {
         type: Boolean,
         default: false,

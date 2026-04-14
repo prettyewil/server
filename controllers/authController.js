@@ -179,8 +179,7 @@ const resetPassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    const devBypass = user.skipEmailOtp && otp === '000000';
-    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
@@ -215,8 +214,7 @@ const verifyResetOTP = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    const devBypass = user.skipEmailOtp && otp === '000000';
-    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         res.status(400);
@@ -352,27 +350,7 @@ const loginUser = asyncHandler(async (req, res) => {
             throw new Error('Account has been rejected. Contact admin.');
         }
 
-        if (user.skipEmailOtp) {
-            res.json({
-                requires2FA: false,
-                skipEmailOtp: true,
-                _id: user.id,
-                name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                middleInitial: user.middleInitial,
-                email: user.email,
-                role: user.role,
-                token: await generateToken(user.id),
-                studentProfile: user.studentProfile,
-                studentId: user.studentId,
-                status: user.status,
-            });
-            await logAction(user.id, 'LOGIN', 'User logged in (skipEmailOtp seed account)', req);
-            return;
-        }
-
-        // 2FA Injection for everyone
+        // Email OTP (2FA) for every account after password check
         const otp = generateOTP();
         await User.updateOne(
             { _id: user._id }, 
@@ -577,27 +555,7 @@ const googleLogin = asyncHandler(async (req, res) => {
         // Pending users are allowed to proceed to get a token
     }
 
-    if (user.skipEmailOtp) {
-        res.json({
-            requires2FA: false,
-            skipEmailOtp: true,
-            _id: user.id,
-            name: user.name,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            middleInitial: user.middleInitial,
-            email: user.email,
-            role: user.role,
-            token: await generateToken(user.id),
-            studentProfile: user.studentProfile,
-            studentId: user.studentId,
-            status: user.status,
-        });
-        await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google (skipEmailOtp seed account)', req);
-        return;
-    }
-
-    // Require OTP for everyone
+    // Email OTP (2FA) for every Google login
     const otp = generateOTP();
     await User.updateOne(
         { _id: user._id }, 
@@ -640,7 +598,7 @@ const loginOtpRequest = asyncHandler(async (req, res) => {
         { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
     );
     
-    await emailService.sendOTPEmail(email, otp);
+    await emailService.sendOTPEmail(user.email, otp);
 
     res.json({ message: 'OTP sent to your email.' });
 });
@@ -664,8 +622,7 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
         throw new Error('Email not found');
     }
 
-    const devBypass = user.skipEmailOtp && otp === '000000';
-    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         await logAction(user.id, 'LOGIN_FAILED', `Phone OTP verification failed for ${email}. Reason: invalid or expired OTP.`, req);
@@ -720,8 +677,7 @@ const verify2FA = asyncHandler(async (req, res) => {
         throw new Error('Email not found');
     }
 
-    const devBypass = user.skipEmailOtp && otp === '000000';
-    const isValid = devBypass || (user.otp === otp && user.otpExpires > Date.now());
+    const isValid = user.otp === otp && user.otpExpires > Date.now();
 
     if (!isValid) {
         await logAction(user.id, 'LOGIN_2FA_FAILED', `2FA verification failed for ${email}. Reason: invalid or expired OTP.`, req);
@@ -735,7 +691,7 @@ const verify2FA = asyncHandler(async (req, res) => {
         { $unset: { otp: 1, otpExpires: 1 } }
     );
 
-    await logAction(user.id, 'LOGIN_2FA', devBypass ? 'User logged in via 2FA (skipEmailOtp dev code)' : 'User logged in via 2FA verification', req);
+    await logAction(user.id, 'LOGIN_2FA', 'User logged in via 2FA verification', req);
 
     res.json({
         _id: user.id,

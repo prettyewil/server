@@ -23,7 +23,7 @@ const connectDB = async () => {
 };
 
 /**
- * Seed users. Staff + student use skipEmailOtp (no email 2FA on login; reset OTP use 000000).
+ * Seed users. All accounts require email OTP on login / Google (same as production users).
  */
 const seedUsers = async () => {
     await connectDB();
@@ -36,7 +36,7 @@ const seedUsers = async () => {
             password: 'ValidPass@123',
             role: 'super_admin',
             status: 'approved',
-            skipEmailOtp: true,
+            skipEmailOtp: false,
         },
         {
             firstName: 'Manager',
@@ -45,7 +45,7 @@ const seedUsers = async () => {
             password: 'Manager@2025',
             role: 'manager',
             status: 'approved',
-            skipEmailOtp: true,
+            skipEmailOtp: false,
         },
         {
             firstName: 'Admin',
@@ -54,7 +54,7 @@ const seedUsers = async () => {
             password: 'Admin@123',
             role: 'admin',
             status: 'approved',
-            skipEmailOtp: true,
+            skipEmailOtp: false,
         },
         {
             firstName: 'Staff',
@@ -63,7 +63,7 @@ const seedUsers = async () => {
             password: 'Staff@2025',
             role: 'staff',
             status: 'approved',
-            skipEmailOtp: true,
+            skipEmailOtp: false,
         },
         {
             firstName: 'Student',
@@ -72,7 +72,7 @@ const seedUsers = async () => {
             password: 'Student@2025',
             role: 'student',
             status: 'approved',
-            skipEmailOtp: true,
+            skipEmailOtp: false,
             studentId: '9900112233',
             studentProfile: {
                 status: 'active',
