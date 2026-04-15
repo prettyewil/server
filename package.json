@@ -1,13 +1,14 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend (Express). Frontend: ../client. Vercel: set Project Root Directory to `server`.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed:users": "node seedSimpleUsers.js"
+    "seed:users": "node seedSimpleUsers.js",
+    "vercel-build": "npm run build --prefix ../client"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,7 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.13",
+    "serverless-http": "^3.2.0",
     "twilio": "^5.12.2",
     "xlsx": "^0.18.5"
   },
