@@ -246,7 +246,7 @@ const listHolidays = async () => {
             singleEvents: true,
             orderBy: 'startTime',
         });
-        return res.data.items.map(item => ({
+        return (res.data.items || []).map(item => ({
             title: item.summary,
             dueDate: item.start.date || item.start.dateTime,
             start: item.start.date || item.start.dateTime,

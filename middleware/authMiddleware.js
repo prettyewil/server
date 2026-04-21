@@ -24,6 +24,10 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
 
+            if (req.user.role != null && req.user.role !== '') {
+                req.user.role = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
+            }
+
             // Staff and admins may use the app while still "pending" approval; students must be approved/active.
             const privilegedRoles = ['super_admin', 'admin', 'manager', 'staff'];
             const statusOk =
@@ -67,6 +71,10 @@ const protectOnboarding = async (req, res, next) => {
 
             if (!req.user) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
+            }
+
+            if (req.user.role != null && req.user.role !== '') {
+                req.user.role = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
             }
 
             // ALLOW 'pending' status for onboarding
