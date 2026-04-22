@@ -2,6 +2,26 @@ const Room = require('../models/Room');
 const User = require('../models/User');
 const { logAction } = require('../utils/logger');
 
+// Helper to get room with occupants
+const getRoomWithOccupants = async (room) => {
+    const users = await User.find({
+        'studentProfile.roomNumber': room.roomNumber,
+        'status': { $ne: 'rejected' },
+        'studentProfile.status': { $in: ['active', 'inactive'] }
+    }).select('name firstName lastName middleInitial studentProfile.status');
+    
+    return {
+        ...room.toObject(),
+        students_count: users.length,
+        student_names: users.map(u => {
+            if (u.fullName) return u.fullName;
+            if (u.name) return u.name;
+            if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
+            return 'Unknown Student';
+        })
+    };
+};
+
 // @desc    Get all rooms
 // @route   GET /api/rooms
 // @access  Public (or Protected based on needs)
@@ -9,19 +29,7 @@ const getRooms = async (req, res) => {
     try {
         const rooms = await Room.find().sort({ roomNumber: 1 });
 
-        const roomsWithCounts = await Promise.all(rooms.map(async (room) => {
-            const users = await User.find({
-                'studentProfile.roomNumber': room.roomNumber,
-                'status': { $ne: 'rejected' },
-                'studentProfile.status': { $in: ['active', 'inactive'] }
-            }).select('name firstName lastName middleInitial studentProfile.status');
-            
-            return {
-                ...room.toObject(),
-                students_count: users.length,
-                student_names: users.map(u => u.fullName || u.name || `${u.firstName} ${u.lastName}`)
-            };
-        }));
+        const roomsWithCounts = await Promise.all(rooms.map(room => getRoomWithOccupants(room)));
 
         res.json(roomsWithCounts);
     } catch (error) {
@@ -68,7 +76,8 @@ const createRoom = async (req, res) => {
 
         await logAction(req.user.id, 'CREATE_ROOM', `Created room ${roomNumber}`, req);
 
-        res.status(201).json(room);
+        const populatedRoom = await getRoomWithOccupants(room);
+        res.status(201).json(populatedRoom);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -93,7 +102,8 @@ const updateRoom = async (req, res) => {
             
             await logAction(req.user.id, 'UPDATE_ROOM', `Updated room ${updatedRoom.roomNumber}`, req);
             
-            res.json(updatedRoom);
+            const populatedRoom = await getRoomWithOccupants(updatedRoom);
+            res.json(populatedRoom);
         } else {
             res.status(404).json({ message: 'Room not found' });
         }

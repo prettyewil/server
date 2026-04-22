@@ -12,27 +12,6 @@ const getTasks = async (req, res) => {
 
         // Filter for students: only show tasks for their room or holidays
         let filteredTasks = tasks;
-        if (req.user.role === 'student') {
-            const studentStart = new Date(); // Debug start
-            // User is already attached to req by protect middleware
-            // But we might need to populate studentProfile to get room number if not already present
-            // verifying req.user structure... usually it's just the user doc.
-            // Let's assume req.user is the full user doc or at least has studentProfile.
-
-            // Re-fetch user if needed to be sure about profile
-            // Optimally, protect middleware attaches user.
-
-            const studentRoom = req.user.studentProfile?.roomNumber;
-
-            filteredTasks = tasks.filter(task => {
-                // Allow if task is global (if any), or assigned to 'All', or matches student room
-                // Also allow holidays (which we append later, but if stored in DB as tasks...)
-                if (task.type === 'holiday') return true;
-                if (!task.assignedRoom) return false; // Should have a room
-                if (task.assignedRoom === 'All') return true;
-                return task.assignedRoom === studentRoom;
-            });
-        }
 
         let holidayTasks = [];
         try {
