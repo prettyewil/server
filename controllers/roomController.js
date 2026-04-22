@@ -9,15 +9,18 @@ const getRooms = async (req, res) => {
     try {
         const rooms = await Room.find().sort({ roomNumber: 1 });
 
-        // Aggregate student counts
         const roomsWithCounts = await Promise.all(rooms.map(async (room) => {
-            const count = await User.countDocuments({
+            const users = await User.find({
                 'studentProfile.roomNumber': room.roomNumber,
-                'studentProfile.status': 'active' // Optional: only count active students? Assuming active usually.
-            });
+            }).select('name studentProfile.status');
+            
+            // Filter to active students if needed, or just include all assigned
+            const activeUsers = users.filter(u => u.studentProfile?.status !== 'inactive');
+            
             return {
                 ...room.toObject(),
-                students_count: count
+                students_count: activeUsers.length,
+                student_names: activeUsers.map(u => u.name)
             };
         }));
 
