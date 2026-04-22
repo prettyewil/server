@@ -25,7 +25,10 @@ const protect = async (req, res, next) => {
             }
 
             if (req.user.role != null && req.user.role !== '') {
-                req.user.role = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
+                const r = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
+                if (r === 'super_admin') req.user.role = 'admin';
+                else if (r === 'admin') req.user.role = 'manager';
+                else req.user.role = r;
             }
 
             // Staff and admins may use the app while still "pending" approval; students must be approved/active.
@@ -74,7 +77,10 @@ const protectOnboarding = async (req, res, next) => {
             }
 
             if (req.user.role != null && req.user.role !== '') {
-                req.user.role = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
+                const r = String(req.user.role).toLowerCase().replace(/\s+/g, '_');
+                if (r === 'super_admin') req.user.role = 'admin';
+                else if (r === 'admin') req.user.role = 'manager';
+                else req.user.role = r;
             }
 
             // ALLOW 'pending' status for onboarding
