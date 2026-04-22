@@ -12,11 +12,11 @@ const { restrictTo } = require('../middleware/roleMiddleware');
 
 router.route('/')
     .get(getRooms)
-    .post(protect, restrictTo('admin', 'manager', 'super_admin'), createRoom);
+    .post(protect, restrictTo('admin', 'manager'), createRoom);
 
 router.route('/:id')
     .get(getRoomById)
-    .put(protect, restrictTo('admin', 'manager', 'super_admin'), updateRoom)
-    .delete(protect, restrictTo('admin', 'manager', 'super_admin'), deleteRoom);
+    .put(protect, restrictTo('admin', 'manager'), updateRoom)
+    .delete(protect, restrictTo('admin', 'manager'), deleteRoom);
 
 module.exports = router;

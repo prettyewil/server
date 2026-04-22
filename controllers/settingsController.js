@@ -17,10 +17,10 @@ const getSettings = async (req, res) => {
 
 // @desc    Update system settings
 // @route   PUT /api/settings
-// @access  Private (Super Admin)
+// @access  Private (Admin)
 const updateSettings = async (req, res) => {
-    if (req.user.role !== 'super_admin') {
-        return res.status(403).json({ message: 'Not authorized as a Super Admin' });
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized as an Admin' });
     }
 
     try {

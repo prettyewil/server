@@ -9,7 +9,7 @@ const { validatePassword } = require('../utils/passwordValidator');
 // @route   GET /api/users/staff
 // @access  Admin
 const getStaff = asyncHandler(async (req, res) => {
-    const staff = await User.find({ role: { $in: ['staff', 'admin', 'manager'] } }).select('-password').sort({ lastName: 1, firstName: 1 });
+    const staff = await User.find({ role: { $in: ['staff', 'manager'] } }).select('-password').sort({ lastName: 1, firstName: 1 });
     res.json(staff);
 });
 
@@ -55,12 +55,12 @@ const createStaff = asyncHandler(async (req, res) => {
 
     // Validate role
     let assignedRole = 'staff';
-    const allowedRoles = ['manager', 'staff', 'admin'];
+    const allowedRoles = ['manager', 'staff'];
 
     if (role && allowedRoles.includes(role)) {
-        if ((role === 'admin' || role === 'manager') && req.user.role !== 'super_admin') {
+        if (role === 'manager' && req.user.role !== 'admin') {
             res.status(403);
-            throw new Error('Only a super admin can create an admin or manager user');
+            throw new Error('Only an admin can create a manager user');
         }
         assignedRole = role;
     }
@@ -162,22 +162,22 @@ const rejectUser = asyncHandler(async (req, res) => {
 
 // @desc    Update user role
 // @route   PUT /api/users/:id/role
-// @access  Admin, Super Admin
+// @access  Admin
 const updateUserRole = asyncHandler(async (req, res) => {
     const { role } = req.body;
 
     // Allowed roles to switch to/from
-    const allowedRoles = ['manager', 'staff', 'admin'];
+    const allowedRoles = ['manager', 'staff'];
 
     if (!allowedRoles.includes(role)) {
         res.status(400);
         throw new Error('Invalid role');
     }
 
-    // Only super_admin can assign 'admin' or 'manager' role
-    if ((role === 'admin' || role === 'manager') && req.user.role !== 'super_admin') {
+    // Only admin can assign 'manager' role
+    if (role === 'manager' && req.user.role !== 'admin') {
         res.status(403);
-        throw new Error('Only a super admin can promote a user to admin or manager');
+        throw new Error('Only an admin can promote a user to manager');
     }
 
     const user = await User.findById(req.params.id);
@@ -187,8 +187,8 @@ const updateUserRole = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    // Prevent modifying students or super_admins via this route if strictness needed
-    // But per request "super admin can only edit the role of the employee not the students"
+    // Prevent modifying students or admins via this route if strictness needed
+    // But per request "admin can only edit the role of the employee not the students"
     if (user.role === 'student') {
         res.status(400);
         throw new Error('Cannot change role of a student');
@@ -204,7 +204,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
 
 // @desc    Get student history (attendance, payments, maintenance)
 // @route   GET /api/users/:id/history
-// @access  Admin, Manager, Super Admin
+// @access  Admin, Manager
 const getStudentHistory = asyncHandler(async (req, res) => {
     const studentId = req.params.id;
 

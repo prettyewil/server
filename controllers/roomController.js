@@ -12,15 +12,14 @@ const getRooms = async (req, res) => {
         const roomsWithCounts = await Promise.all(rooms.map(async (room) => {
             const users = await User.find({
                 'studentProfile.roomNumber': room.roomNumber,
-            }).select('name studentProfile.status');
-            
-            // Filter to active students if needed, or just include all assigned
-            const activeUsers = users.filter(u => u.studentProfile?.status !== 'inactive');
+                'status': { $ne: 'rejected' },
+                'studentProfile.status': { $in: ['active', 'inactive'] }
+            }).select('name firstName lastName middleInitial studentProfile.status');
             
             return {
                 ...room.toObject(),
-                students_count: activeUsers.length,
-                student_names: activeUsers.map(u => u.name)
+                students_count: users.length,
+                student_names: users.map(u => u.fullName || u.name || `${u.firstName} ${u.lastName}`)
             };
         }));
 

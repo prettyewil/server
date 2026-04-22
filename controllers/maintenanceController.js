@@ -43,7 +43,7 @@ const createRequest = async (req, res) => {
         let roomNumber = req.user.studentProfile ? req.user.studentProfile.roomNumber : 'Unknown';
 
         // Helper to check if user has admin privileges
-        const isAdmin = ['admin', 'manager', 'super_admin'].includes(req.user.role);
+        const isAdmin = ['admin', 'manager'].includes(req.user.role);
 
         let reqEmail = req.user.email;
         if (isAdmin && student_id) {

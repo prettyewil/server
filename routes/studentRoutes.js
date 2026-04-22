@@ -11,11 +11,11 @@ const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 
 router.route('/')
-    .get(protect, restrictTo('admin', 'manager', 'super_admin', 'staff'), getStudents)
-    .post(protect, restrictTo('admin', 'manager', 'super_admin'), createStudent);
+    .get(protect, restrictTo('admin', 'manager', 'staff'), getStudents)
+    .post(protect, restrictTo('admin', 'manager'), createStudent);
 
 router.route('/:id')
-    .put(protect, restrictTo('admin', 'manager', 'super_admin'), updateStudent)
-    .delete(protect, restrictTo('admin', 'manager', 'super_admin'), deleteStudent);
+    .put(protect, restrictTo('admin', 'manager'), updateStudent)
+    .delete(protect, restrictTo('admin', 'manager'), deleteStudent);
 
 module.exports = router;

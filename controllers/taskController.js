@@ -73,7 +73,7 @@ const createTask = async (req, res) => {
 
         // Find administrative staff so they also see the calendar events
         const staffAndAdmins = await User.find({
-            role: { $in: ['admin', 'super_admin', 'manager', 'staff'] }
+            role: { $in: ['admin', 'manager', 'staff'] }
         });
 
         // Prepare attendee list for Google Calendar
@@ -141,7 +141,7 @@ const updateTask = async (req, res) => {
         if (syncToCalendar && !task.googleEventId) {
             // Create event since it wasn't synced before
             const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
-            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'super_admin', 'manager', 'staff'] } });
+            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'manager', 'staff'] } });
             const taskForGCal = task.toObject();
             taskForGCal.attendees = [...students, ...staffAndAdmins].map(u => ({ email: u.email }));
             const googleEventId = await createEvent(taskForGCal);
@@ -152,7 +152,7 @@ const updateTask = async (req, res) => {
         } else if (syncToCalendar && task.googleEventId) {
             // Update existing event
             const students = await User.find({ 'studentProfile.roomNumber': task.assignedRoom, role: 'student' });
-            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'super_admin', 'manager', 'staff'] } });
+            const staffAndAdmins = await User.find({ role: { $in: ['admin', 'manager', 'staff'] } });
             const taskForGCal = task.toObject();
             taskForGCal.attendees = [...students, ...staffAndAdmins].map(u => ({ email: u.email }));
             await updateEvent(task.googleEventId, taskForGCal);

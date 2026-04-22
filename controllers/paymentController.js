@@ -112,8 +112,8 @@ const updatePaymentStatus = async (req, res) => {
             }
         }
 
-        // Allow Admin/Manager/SuperAdmin to update other details (existing logic)
-        if (['admin', 'manager', 'super_admin'].includes(req.user.role)) {
+        // Allow Admin/Manager to update other details (existing logic)
+        if (['admin', 'manager'].includes(req.user.role)) {
             const { amount, type, dueDate, notes, student, referenceNumber } = req.body;
             if (amount) payment.amount = amount;
             if (type) payment.type = type;
@@ -145,7 +145,7 @@ const updatePaymentStatus = async (req, res) => {
             // For simplicity, we might skip this or find all admins. 
             // Let's implement finding all admins to notify them.
             const User = require('../models/User');
-            const admins = await User.find({ role: { $in: ['admin', 'manager', 'super_admin'] } });
+            const admins = await User.find({ role: { $in: ['admin', 'manager'] } });
             for (const admin of admins) {
                 await createNotification(
                     admin._id,

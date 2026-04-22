@@ -29,7 +29,7 @@ const protect = async (req, res, next) => {
             }
 
             // Staff and admins may use the app while still "pending" approval; students must be approved/active.
-            const privilegedRoles = ['super_admin', 'admin', 'manager', 'staff'];
+            const privilegedRoles = ['admin', 'manager', 'staff'];
             const statusOk =
                 req.user.status === 'active' ||
                 req.user.status === 'approved' ||

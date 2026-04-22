@@ -336,7 +336,7 @@ const loginUser = asyncHandler(async (req, res) => {
             await user.save();
         }
 
-        const allowedRoles = ['admin', 'manager', 'super_admin'];
+        const allowedRoles = ['admin', 'manager'];
 
         // Removed check for 'pending' status to allow them to login and see the PendingValidation screen
         // if (!allowedRoles.includes(user.role) && user.status === 'pending') {
@@ -543,8 +543,8 @@ const googleLogin = asyncHandler(async (req, res) => {
         return; // Fixed: Missing return
     }
 
-    // Allow Admins, Managers, Super Admins to bypass pending/rejected checks
-    const allowedRoles = ['admin', 'manager', 'super_admin'];
+    // Allow Admins, Managers to bypass pending/rejected checks
+    const allowedRoles = ['admin', 'manager'];
     if (!allowedRoles.includes(user.role)) {
         // Check if rejected
         if (user.status === 'rejected') {
@@ -631,7 +631,7 @@ const loginOtpVerify = asyncHandler(async (req, res) => {
     }
 
     // Check status
-    const allowedRoles = ['admin', 'manager', 'super_admin'];
+    const allowedRoles = ['admin', 'manager'];
     if (!allowedRoles.includes(user.role) && user.status === 'rejected') {
         await logAction(user.id, 'LOGIN_FAILED', `Phone OTP verification failed for ${email}. Reason: account rejected.`, req);
         res.status(403);
