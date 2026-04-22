@@ -10,8 +10,25 @@ const getRoomWithOccupants = async (room) => {
         'studentProfile.status': { $in: ['active', 'inactive'] }
     }).select('name firstName lastName middleInitial studentProfile.status');
     
+    let effectiveStatus = room.status;
+    
+    // Auto-update status based on occupancy (unless under Maintenance)
+    if (room.status !== 'Maintenance') {
+        if (users.length >= room.capacity) {
+            effectiveStatus = 'Occupied';
+        } else {
+            effectiveStatus = 'Available';
+        }
+    }
+
+    // If the logical status differs from DB, update the DB asynchronously
+    if (effectiveStatus !== room.status) {
+        Room.findByIdAndUpdate(room._id, { status: effectiveStatus }).exec().catch(err => console.error('Error auto-syncing room status:', err));
+    }
+
     return {
         ...room.toObject(),
+        status: effectiveStatus,
         students_count: users.length,
         student_names: users.map(u => {
             if (u.fullName) return u.fullName;
