@@ -6,9 +6,8 @@ const { logAction } = require('../utils/logger');
 const getRoomWithOccupants = async (room) => {
     const users = await User.find({
         'studentProfile.roomNumber': room.roomNumber,
-        'status': { $ne: 'rejected' },
-        'studentProfile.status': { $in: ['active', 'inactive'] }
-    }).select('name firstName lastName middleInitial studentProfile.status');
+        'status': { $ne: 'rejected' }
+    }).select('name firstName lastName middleInitial studentProfile');
     
     let effectiveStatus = room.status;
     
@@ -31,10 +30,11 @@ const getRoomWithOccupants = async (room) => {
         status: effectiveStatus,
         students_count: users.length,
         student_names: users.map(u => {
-            if (u.fullName) return u.fullName;
-            if (u.name) return u.name;
-            if (u.firstName && u.lastName) return `${u.firstName} ${u.lastName}`;
-            return 'Unknown Student';
+            const firstName = u.firstName || '';
+            const lastName = u.lastName || '';
+            const middleInitial = u.middleInitial ? `${u.middleInitial}. ` : '';
+            if (firstName && lastName) return `${firstName} ${middleInitial}${lastName}`.trim();
+            return u.name || u.firstName || u.lastName || 'Unknown Student';
         })
     };
 };
@@ -61,7 +61,8 @@ const getRoomById = async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
         if (room) {
-            res.json(room);
+            const populatedRoom = await getRoomWithOccupants(room);
+            res.json(populatedRoom);
         } else {
             res.status(404).json({ message: 'Room not found' });
         }
