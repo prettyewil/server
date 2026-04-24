@@ -1,7 +1,7 @@
 const path = require('path');
 const dotenv = require('dotenv');
 
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '.env'), override: true });
 
 const { connectDB } = require('./db');
 const app = require('./app');

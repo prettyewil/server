@@ -31,6 +31,15 @@ const seedUsers = async () => {
     const users = [
         {
             firstName: 'Admin',
+            lastName: 'Buksu',
+            email: 'admin@student.buksu.edu.ph',
+            password: 'admin123',
+            role: 'admin',
+            status: 'approved',
+            skipEmailOtp: true,
+        },
+        {
+            firstName: 'Admin',
             lastName: 'User',
             email: 'admin@buksu.edu.ph',
             password: 'Admin@123',

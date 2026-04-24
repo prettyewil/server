@@ -351,6 +351,25 @@ const loginUser = asyncHandler(async (req, res) => {
         }
 
         // Email OTP (2FA) for every account after password check
+        // Check for bypass
+        if (user.skipEmailOtp) {
+            await logAction(user.id, 'LOGIN', 'User logged in (OTP Bypassed)', req);
+            return res.json({
+                _id: user.id,
+                name: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                middleInitial: user.middleInitial,
+                email: user.email,
+                role: user.role,
+                token: await generateToken(user.id),
+                studentProfile: user.studentProfile,
+                studentId: user.studentId,
+                status: user.status,
+                skipEmailOtp: true
+            });
+        }
+
         const otp = generateOTP();
         await User.updateOne(
             { _id: user._id }, 
@@ -556,6 +575,25 @@ const googleLogin = asyncHandler(async (req, res) => {
     }
 
     // Email OTP (2FA) for every Google login
+    // Check for bypass
+    if (user.skipEmailOtp) {
+        await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google (OTP Bypassed)', req);
+        return res.json({
+            _id: user.id,
+            name: user.name,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleInitial: user.middleInitial,
+            email: user.email,
+            role: user.role,
+            token: await generateToken(user.id),
+            studentProfile: user.studentProfile,
+            studentId: user.studentId,
+            status: user.status,
+            skipEmailOtp: true
+        });
+    }
+
     const otp = generateOTP();
     await User.updateOne(
         { _id: user._id }, 

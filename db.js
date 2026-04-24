@@ -18,7 +18,14 @@ async function connectDB() {
         return mongoose.connection.asPromise();
     }
 
-    await mongoose.connect(uri);
+    // Log the URI (masking password) for debugging
+    const maskedUri = uri.replace(/\/\/([^:]+):([^@]+)@/, '// $1:***@');
+    console.log(`[Database] Connecting to: ${maskedUri}`);
+
+    await mongoose.connect(uri, {
+        family: 4, // Force IPv4 to avoid some DNS issues
+        serverSelectionTimeoutMS: 30000, // Wait up to 30s
+    });
     return mongoose.connection;
 }
 
