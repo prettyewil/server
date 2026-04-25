@@ -16,6 +16,13 @@ let handler;
 module.exports = async (req, res) => {
     try {
         await connectDB();
+
+        // Fix for Vercel: Vercel may strip the /api prefix from the URL.
+        // We need to ensure it's present so Express routes in app.js (which start with /api) match.
+        if (req.url && !req.url.startsWith('/api')) {
+            req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
+        }
+
         if (!handler) {
             handler = serverless(app);
         }
