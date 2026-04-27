@@ -37,4 +37,4 @@ const passSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Pass', passSchema);
+module.exports = mongoose.models.Pass || mongoose.model('Pass', passSchema);

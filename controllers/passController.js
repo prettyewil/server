@@ -37,7 +37,12 @@ exports.getPasses = async (req, res) => {
 
         res.status(200).json(passes);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching passes', error: error.message });
+        console.error('Error fetching passes:', error);
+        res.status(500).json({ 
+            message: 'Error fetching passes', 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+        });
     }
 };
 
