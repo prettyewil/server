@@ -500,115 +500,116 @@ const updateProfile = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/google
 // @access  Public
 const googleLogin = asyncHandler(async (req, res) => {
-    try {
-        const { token } = req.body;
+    const { token } = req.body;
 
-        if (!process.env.GOOGLE_CLIENT_ID) {
-            res.status(503);
-            throw new Error('Google login is not configured on this server.');
-        }
+    if (!process.env.GOOGLE_CLIENT_ID) {
+        res.status(503);
+        throw new Error('Google login is not configured on this server.');
+    }
 
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { name, email, picture, given_name, family_name } = ticket.getPayload();
+
+    if (!email.endsWith('@buksu.edu.ph') && !email.endsWith('@student.buksu.edu.ph')) {
+        await logAction(null, 'LOGIN_GOOGLE_FAILED', `Google login failed for ${email}. Reason: invalid email domain.`, req);
+        res.status(400);
+        throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+        // Create a new user if one doesn't exist
+        // Generate a random password since they login via Google
+        const password = Math.random().toString(36).slice(-8);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const fName = given_name || (name && name.split(' ')[0]) || 'Student';
+        const lName = family_name || (name && name.split(' ').slice(1).join(' ')) || 'User';
+
+        user = await User.create({
+            firstName: fName,
+            lastName: lName,
+            // name: name, // Handled by pre-save
+            email,
+            password: hashedPassword,
+            role: 'student', // Default role for NEW Google users
+            status: 'pending',
+            studentProfile: {
+                status: 'inactive' // Will be effectively inactive if user status is pending, but prepared
+            }
         });
 
-        const { name, email, picture, given_name, family_name } = ticket.getPayload();
-
-        if (!email.endsWith('@buksu.edu.ph') && !email.endsWith('@student.buksu.edu.ph')) {
-            await logAction(null, 'LOGIN_GOOGLE_FAILED', `Google login failed for ${email}. Reason: invalid email domain.`, req);
-            res.status(400);
-            throw new Error('Please use your @student.buksu.edu.ph or @buksu.edu.ph email.');
-        }
-
-        let user = await User.findOne({ email });
-
-        if (!user) {
-            const password = Math.random().toString(36).slice(-8);
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
-
-            const fName = given_name || (name && name.split(' ')[0]) || 'Student';
-            const lName = family_name || (name && name.split(' ').slice(1).join(' ')) || 'User';
-
-            user = await User.create({
-                firstName: fName,
-                lastName: lName,
-                email,
-                password: hashedPassword,
-                role: 'student',
-                status: 'pending',
-                studentProfile: {
-                    status: 'inactive'
-                }
-            });
-
-            await logAction(user.id, 'REGISTER_GOOGLE', 'User registered via Google (Pending Approval)', req);
-
-            const otp = generateOTP();
-            user.otp = otp;
-            user.otpExpires = Date.now() + 10 * 60 * 1000;
-            await user.save();
-
-            await emailService.sendOTPEmail(user.email, otp);
-
-            return res.status(201).json({
-                requires2FA: true,
-                email: user.email,
-                message: 'OTP sent to your email for Two-Factor Authentication.'
-            });
-        }
-
-        const allowedRoles = ['admin', 'manager'];
-        if (!allowedRoles.includes(user.role)) {
-            if (user.status === 'rejected') {
-                await logAction(user.id, 'LOGIN_GOOGLE_FAILED', 'Google login failed. Reason: account has been rejected.', req);
-                res.status(403);
-                throw new Error('Account has been rejected. Contact admin.');
-            }
-        }
-
-        if (user.skipEmailOtp) {
-            await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google (OTP Bypassed)', req);
-            return res.json({
-                _id: user.id,
-                name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                middleInitial: user.middleInitial,
-                email: user.email,
-                role: user.role,
-                token: await generateToken(user.id),
-                studentProfile: user.studentProfile,
-                studentId: user.studentId,
-                status: user.status,
-                skipEmailOtp: true
-            });
-        }
+        await logAction(user.id, 'REGISTER_GOOGLE', 'User registered via Google (Pending Approval)', req);
 
         const otp = generateOTP();
-        await User.updateOne(
-            { _id: user._id },
-            { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
-        );
+        user.otp = otp;
+        user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
 
         await emailService.sendOTPEmail(user.email, otp);
 
-        res.json({
+        res.status(201).json({
             requires2FA: true,
             email: user.email,
             message: 'OTP sent to your email for Two-Factor Authentication.'
         });
-
-        await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google', req);
-    } catch (error) {
-        console.error('Google Login Controller Error:', error);
-        if (!res.headersSent) {
-            res.status(res.statusCode === 200 ? 500 : res.statusCode).json({
-                message: error.message || 'Google authentication failed'
-            });
-        }
+        return; // Fixed: Missing return
     }
+
+    // Allow Admins, Managers to bypass pending/rejected checks
+    const allowedRoles = ['admin', 'manager'];
+    if (!allowedRoles.includes(user.role)) {
+        // Check if rejected
+        if (user.status === 'rejected') {
+            await logAction(user.id, 'LOGIN_GOOGLE_FAILED', 'Google login failed. Reason: account has been rejected.', req);
+            res.status(403);
+            throw new Error('Account has been rejected. Contact admin.');
+        }
+        // Pending users are allowed to proceed to get a token
+    }
+
+    // Email OTP (2FA) for every Google login
+    // Check for bypass
+    if (user.skipEmailOtp) {
+        await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google (OTP Bypassed)', req);
+        return res.json({
+            _id: user.id,
+            name: user.name,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            middleInitial: user.middleInitial,
+            email: user.email,
+            role: user.role,
+            token: await generateToken(user.id),
+            studentProfile: user.studentProfile,
+            studentId: user.studentId,
+            status: user.status,
+            skipEmailOtp: true
+        });
+    }
+
+    const otp = generateOTP();
+    await User.updateOne(
+        { _id: user._id },
+        { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
+    );
+
+    await emailService.sendOTPEmail(user.email, otp);
+
+    res.json({
+        requires2FA: true,
+        email: user.email,
+        message: 'OTP sent to your email for Two-Factor Authentication.'
+    });
+
+    // Log Google login
+    await logAction(user.id, 'LOGIN_GOOGLE', 'User logged in via Google', req);
 });
 
 // @desc    Request OTP for Login
