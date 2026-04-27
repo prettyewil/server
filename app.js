@@ -47,7 +47,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/passes', passRoutes);
+app.use('/api/pass-management', passRoutes);
 
 
 app.get('/', (req, res) => {
