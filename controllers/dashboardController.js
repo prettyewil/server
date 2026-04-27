@@ -2,12 +2,14 @@ const User = require('../models/User');
 const MaintenanceRequest = require('../models/MaintenanceRequest');
 const Task = require('../models/Task');
 const Payment = require('../models/Payment');
+const { updateOverdueStatus } = require('./paymentController');
 
 // @desc    Get admin dashboard stats
 // @route   GET /api/dashboard/admin/stats
 // @access  Private (Admin)
 const getAdminStats = async (req, res) => {
     try {
+        await updateOverdueStatus();
         const totalStudents = await User.countDocuments({ role: 'student' });
         const pendingMaintenance = await MaintenanceRequest.countDocuments({ status: 'pending' });
         const overduePayments = await Payment.countDocuments({ status: 'overdue' });
@@ -45,6 +47,7 @@ const getAdminStats = async (req, res) => {
 const getStudentStats = async (req, res) => {
     try {
         const studentId = req.user.id;
+        await updateOverdueStatus();
 
         // Calculate balance (pending + overdue payments)
         const payments = await Payment.find({

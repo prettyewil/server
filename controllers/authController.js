@@ -39,7 +39,7 @@ const registerUser = asyncHandler(async (req, res) => {
         res.status(400);
         throw new Error(passwordError);
     }
-    
+
     if (!email.toLowerCase().endsWith('@buksu.edu.ph') && !email.toLowerCase().endsWith('@student.buksu.edu.ph')) {
         await logAction(null, 'REGISTER_FAILED', `Registration failed for ${email}. Reason: invalid email domain.`, req);
         res.status(400);
@@ -150,7 +150,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     const otp = generateOTP();
     await User.updateOne(
-        { _id: user._id }, 
+        { _id: user._id },
         { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
     );
 
@@ -188,10 +188,10 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedNewPassword = await bcrypt.hash(newPassword, salt);
-    
+
     await User.updateOne(
-        { _id: user._id }, 
-        { 
+        { _id: user._id },
+        {
             $set: { password: hashedNewPassword },
             $unset: { otp: 1, otpExpires: 1 }
         }
@@ -254,7 +254,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     await User.updateOne(
         { _id: user._id },
-        { 
+        {
             $set: { status: 'pending', studentProfile: user.studentProfile },
             $unset: { otp: 1, otpExpires: 1 }
         }
@@ -372,10 +372,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
         const otp = generateOTP();
         await User.updateOne(
-            { _id: user._id }, 
+            { _id: user._id },
             { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
         );
-        
+
         await emailService.sendOTPEmail(user.email, otp);
 
         res.json({
@@ -551,7 +551,7 @@ const googleLogin = asyncHandler(async (req, res) => {
         user.otp = otp;
         user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
         await user.save();
-        
+
         await emailService.sendOTPEmail(user.email, otp);
 
         res.status(201).json({
@@ -596,10 +596,10 @@ const googleLogin = asyncHandler(async (req, res) => {
 
     const otp = generateOTP();
     await User.updateOne(
-        { _id: user._id }, 
+        { _id: user._id },
         { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
     );
-    
+
     await emailService.sendOTPEmail(user.email, otp);
 
     res.json({
@@ -632,10 +632,10 @@ const loginOtpRequest = asyncHandler(async (req, res) => {
 
     const otp = generateOTP();
     await User.updateOne(
-        { _id: user._id }, 
+        { _id: user._id },
         { $set: { otp: otp, otpExpires: Date.now() + 10 * 60 * 1000 } }
     );
-    
+
     await emailService.sendOTPEmail(user.email, otp);
 
     res.json({ message: 'OTP sent to your email.' });

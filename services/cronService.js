@@ -4,6 +4,7 @@ const Payment = require('../models/Payment');
 const Attendance = require('../models/Attendance');
 const emailService = require('./emailService');
 const { logAction } = require('../utils/logger');
+const { updateOverdueStatus } = require('../controllers/paymentController');
 
 // ==========================================
 // 1. Attendance Reminder Logic
@@ -112,12 +113,26 @@ const runPaymentReminder = async () => {
     }
 };
 
+// ==========================================
+// 4. Overdue Payment Check Logic
+// ==========================================
+const runOverduePaymentCheck = async () => {
+    console.log('[Cron] Running Overdue Payment Check...');
+    try {
+        await updateOverdueStatus();
+        console.log('[Cron] Overdue Payment Check finished.');
+    } catch (error) {
+        console.error('[Cron] Error in Overdue Payment Check job:', error);
+    }
+};
+
 const scheduleJobs = () => {
     console.log('[Cron] Initializing scheduled jobs...');
 
     cron.schedule('0 8 * * *', runAttendanceReminder);
     cron.schedule('0 21 * * *', runAbsenteeCheck);
     cron.schedule('0 9 * * *', runPaymentReminder);
+    cron.schedule('0 0 * * *', runOverduePaymentCheck); // Every midnight
 };
 
 module.exports = {

@@ -4,11 +4,46 @@ const { logAction } = require('../utils/logger');
 const emailService = require('../services/emailService');
 const { createNotification } = require('./notificationController');
 
+// Helper function to update overdue payments
+const updateOverdueStatus = async () => {
+    try {
+        const now = new Date();
+        // Update payments that are 'pending' and past their due date to 'overdue'
+        const result = await Payment.updateMany(
+            {
+                status: 'pending',
+                dueDate: { $lt: now }
+            },
+            {
+                $set: { status: 'overdue' }
+            }
+        );
+        
+        // Also consider 'rejected' payments that are past their due date as 'overdue'?
+        // Actually, let's keep it simple for now and only update 'pending'.
+        // If we want to include rejected:
+        await Payment.updateMany(
+            {
+                status: 'rejected',
+                dueDate: { $lt: now }
+            },
+            {
+                $set: { status: 'overdue' }
+            }
+        );
+
+        return result;
+    } catch (error) {
+        console.error('Error updating overdue status:', error);
+    }
+};
+
 // @desc    Get all payments
 // @route   GET /api/payments
 // @access  Private (Admin)
 const getPayments = async (req, res) => {
     try {
+        await updateOverdueStatus();
         const payments = await Payment.find().select('-receiptData').populate('student', 'name email roomNumber').sort({ createdAt: -1 });
         res.status(200).json(payments);
     } catch (error) {
@@ -21,6 +56,7 @@ const getPayments = async (req, res) => {
 // @access  Private (Student)
 const getMyHistory = async (req, res) => {
     try {
+        await updateOverdueStatus();
         const payments = await Payment.find({ student: req.user.id }).select('-receiptData').sort({ createdAt: -1 });
         res.status(200).json(payments);
     } catch (error) {
@@ -284,5 +320,6 @@ module.exports = {
     createBulkPayment,
     updatePaymentStatus,
     getPaymentReceipt,
-    deletePayment
+    deletePayment,
+    updateOverdueStatus
 };
