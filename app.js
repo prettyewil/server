@@ -31,7 +31,7 @@ const studentRoutes = require('./routes/studentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const logRoutes = require('./routes/logRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
-// const passRoutes = require('./routes/passRoutes');
+const passRoutes = require('./routes/passRoutes');
 
 const { errorHandler } = require('./middleware/errorMiddleware');
 
@@ -47,8 +47,22 @@ app.use('/api/students', studentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
-// app.use('/api/pass-management', passRoutes);
+app.use('/api/pass-management', passRoutes);
 
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', message: 'DormSync API is running' });
+});
+
+app.get('/api/db-check', async (req, res) => {
+    try {
+        const { connectDB } = require('./db');
+        const db = await connectDB();
+        res.json({ status: 'OK', readyState: db.readyState });
+    } catch (err) {
+        res.status(500).json({ status: 'ERROR', message: err.message });
+    }
+});
 
 app.get('/', (req, res) => {
     res.send('DormSync API is running');
