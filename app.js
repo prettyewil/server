@@ -31,6 +31,8 @@ const studentRoutes = require('./routes/studentRoutes');
 const userRoutes = require('./routes/userRoutes');
 const logRoutes = require('./routes/logRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const passRoutes = require('./routes/passRoutes');
+
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 app.use('/api/auth', authRoutes);
@@ -45,6 +47,8 @@ app.use('/api/students', studentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/passes', passRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('DormSync API is running');
