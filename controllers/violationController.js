@@ -73,7 +73,6 @@ exports.getMyViolations = async (req, res) => {
             .sort({ createdAt: -1 });
 
         const totalPoints = violations
-            .filter(v => v.status === 'Active')
             .reduce((sum, v) => sum + v.points, 0);
 
         res.status(200).json({ violations, totalPoints });

@@ -34,6 +34,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const passRoutes = require('./routes/passRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const violationRoutes = require('./routes/violationRoutes');
+const offenseRoutes = require('./routes/offenseRoutes');
 
 const { errorHandler } = require('./middleware/errorMiddleware');
 
@@ -52,6 +53,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/pass-management', passRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/violations', violationRoutes);
+app.use('/api/offenses', offenseRoutes);
 
 
 app.get('/api/health', (req, res) => {

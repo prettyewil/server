@@ -27,7 +27,7 @@ const violationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Active', 'Resolved'],
+        enum: ['Active'],
         default: 'Active',
     },
     reportedBy: {
