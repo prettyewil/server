@@ -71,7 +71,7 @@ const createAttendance = async (req, res) => {
         if (req.body.session === 'final') {
             const currentHour = new Date().getHours();
             if (currentHour < 20) {
-                return res.status(400).json({ message: 'Final attendance can only be recorded after 8:00 PM.' });
+                return res.status(400).json({ message: 'Present attendance can only be recorded after 8:00 PM.' });
             }
         }
 
@@ -98,7 +98,7 @@ const updateAttendance = async (req, res) => {
             // In case it's a manual edit:
             const currentHour = new Date().getHours();
             if (currentHour < 20) {
-                 return res.status(400).json({ message: 'Final attendance can only be modified after 8:00 PM.' });
+                 return res.status(400).json({ message: 'Present attendance can only be modified after 8:00 PM.' });
             }
         }
 
