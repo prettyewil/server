@@ -11,6 +11,11 @@ const attendanceSchema = new mongoose.Schema({
         required: true,
         default: Date.now,
     },
+    session: {
+        type: String,
+        enum: ['morning', 'afternoon', 'evening', 'final'],
+        default: 'morning',
+    },
     timeIn: {
         type: Date,
     },
@@ -19,7 +24,7 @@ const attendanceSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['present', 'late', 'absent'],
+        enum: ['present', 'late', 'absent', 'on_pass'],
         default: 'present',
     },
 }, { timestamps: true });
