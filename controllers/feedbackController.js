@@ -39,8 +39,35 @@ const getPublicFeedback = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// @desc    Get all feedbacks (Admin/Manager)
+// @route   GET /api/feedback/all
+// @access  Private (Admin/Manager)
+const getAllFeedback = async (req, res) => {
+    try {
+        const feedbacks = await Feedback.find()
+            .populate('user', 'name firstName email')
+            .sort({ createdAt: -1 });
+        res.json(feedbacks);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Check if current user has submitted feedback
+// @route   GET /api/feedback/status
+// @access  Private
+const checkFeedbackStatus = async (req, res) => {
+    try {
+        const feedback = await Feedback.findOne({ user: req.user.id });
+        res.json({ hasSubmitted: !!feedback });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     createFeedback,
-    getPublicFeedback
+    getPublicFeedback,
+    getAllFeedback,
+    checkFeedbackStatus
 };

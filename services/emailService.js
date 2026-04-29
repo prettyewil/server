@@ -102,6 +102,25 @@ const sendPaymentReceipt = async (student, payment) => {
     await sendEmail(student.email, 'Payment Confirmation & Receipt', html);
 };
 
+const sendPaymentApprovedEmail = async (student, payment) => {
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; border-top: 5px solid #2ECC40;">
+            <h2 style="color: #001F3F; text-align: center;">Payment Approved</h2>
+            <p>Hello ${student.firstName || student.name || 'Student'},</p>
+            <p>Great news! Your payment has been successfully verified and <strong>approved</strong> by the administrator.</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Transaction ID:</strong> ${payment._id}</p>
+                <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₱${payment.amount}</p>
+                <p style="margin: 5px 0;"><strong>Type:</strong> ${payment.type}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> Approved</p>
+            </div>
+            <p>Thank you for settling your account on time.</p>
+        </div>
+    `;
+    await sendEmail(student.email, 'Payment Approved Confirmation', html);
+};
+
 const sendApprovalEmail = async (user) => {
     const subject = 'Your DormSync Account has been Approved!';
     const loginLink = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/login` : 'https://dormsync-xi.vercel.app/login';
@@ -144,6 +163,7 @@ module.exports = {
     sendAbsentNotification,
     sendPaymentReminder,
     sendPaymentReceipt,
+    sendPaymentApprovedEmail,
     sendApprovalEmail,
     sendRejectionEmail
 };

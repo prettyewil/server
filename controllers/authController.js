@@ -19,10 +19,10 @@ const { validatePassword } = require('../utils/passwordValidator');
 
 // Generate JWT Token
 const generateToken = async (id) => {
-    let settings = await SystemSettings.findOne();
-    const expiresIn = settings ? `${settings.sessionTimeout}m` : '15m';
+    // Note: The frontend manages inactivity timeout. The backend JWT is set to 24h
+    // to prevent active users from being logged out when their initial token expires.
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn,
+        expiresIn: '24h',
     });
 };
 

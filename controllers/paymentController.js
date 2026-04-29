@@ -112,6 +112,8 @@ const updatePaymentStatus = async (req, res) => {
             return res.status(404).json({ message: 'Payment not found' });
         }
 
+        const previousStatus = payment.status;
+
         // Check if user is authorized to update this payment
         if (req.user.role === 'student' && payment.student.toString() !== req.user.id) {
             return res.status(403).json({ message: 'Not authorized to update this payment' });
@@ -166,8 +168,8 @@ const updatePaymentStatus = async (req, res) => {
         res.status(200).json(paymentResponse);
 
         // Send receipt if paid
-        if (payment.status === 'paid' && paymentResponse.student) {
-            await emailService.sendPaymentReceipt(paymentResponse.student, paymentResponse);
+        if (payment.status === 'paid' && previousStatus !== 'paid' && paymentResponse.student) {
+            await emailService.sendPaymentApprovedEmail(paymentResponse.student, paymentResponse);
             // Notify student
             await createNotification(
                 payment.student._id,
