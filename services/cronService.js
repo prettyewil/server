@@ -5,6 +5,7 @@ const Attendance = require('../models/Attendance');
 const emailService = require('./emailService');
 const { logAction } = require('../utils/logger');
 const { updateOverdueStatus } = require('../controllers/paymentController');
+const { createNotification } = require('../controllers/notificationController');
 
 // ==========================================
 // 1. Attendance Reminder Logic
@@ -92,9 +93,9 @@ const runPaymentReminder = async () => {
         const tomorrowEnd = new Date(tomorrow);
         tomorrowEnd.setHours(23, 59, 59, 999);
 
-        // Find pending payments due tomorrow
+        // Find pending or rejected payments due tomorrow
         const payments = await Payment.find({
-            status: 'pending',
+            status: { $in: ['pending', 'rejected'] },
             dueDate: { $gte: tomorrow, $lte: tomorrowEnd }
         }).populate('student');
 
@@ -103,6 +104,13 @@ const runPaymentReminder = async () => {
         for (const payment of payments) {
             if (payment.student) {
                 await emailService.sendPaymentReminder(payment.student, payment);
+                await createNotification(
+                    payment.student._id,
+                    `Friendly reminder: Your payment for ${payment.type} is due tomorrow.`,
+                    'info',
+                    payment._id,
+                    'Payment'
+                );
                 console.log(`[Cron] Sent payment reminder to ${payment.student.email}`);
                 sentCount++;
             }

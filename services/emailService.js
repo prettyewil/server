@@ -1,12 +1,10 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
+    service: 'gmail',
     auth: {
         user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        pass: process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '',
     },
 });
 
@@ -102,6 +100,42 @@ const sendPaymentReceipt = async (student, payment) => {
     await sendEmail(student.email, 'Payment Confirmation & Receipt', html);
 };
 
+const sendNewPaymentNotification = async (student, payment) => {
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; border-left: 5px solid #001F3F;">
+            <h2 style="color: #001F3F; text-align: center;">New Payment Assigned</h2>
+            <p>Hello ${student.firstName || student.name || 'Student'},</p>
+            <p>A new payment has been assigned to your account. Details are below:</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Type:</strong> ${payment.type}</p>
+                <p style="margin: 5px 0;"><strong>Amount:</strong> ₱${payment.amount}</p>
+                <p style="margin: 5px 0;"><strong>Due Date:</strong> ${new Date(payment.dueDate).toLocaleDateString()}</p>
+            </div>
+            <p>Please log in to your account to settle this payment.</p>
+            <br>
+            <p>Regards,<br>DormSync Team</p>
+        </div>
+    `;
+    await sendEmail(student.email, 'DormSync: New Payment Assigned', html);
+};
+
+const sendOverduePaymentNotification = async (student, payment) => {
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; border-left: 5px solid #FF4136;">
+            <h2 style="color: #FF4136; text-align: center;">Payment Overdue</h2>
+            <p>Hello ${student.firstName || student.name || 'Student'},</p>
+            <p>This is to notify you that your payment is now <strong>OVERDUE</strong>.</p>
+            <ul>
+                <li><strong>Type:</strong> ${payment.type}</li>
+                <li><strong>Amount:</strong> ₱${payment.amount}</li>
+                <li><strong>Due Date:</strong> ${new Date(payment.dueDate).toLocaleDateString()}</li>
+            </ul>
+            <p>Please log in to your account and settle this payment immediately to avoid penalties or account restrictions.</p>
+        </div>
+    `;
+    await sendEmail(student.email, 'URGENT: Payment Overdue', html);
+};
+
 const sendPaymentApprovedEmail = async (student, payment) => {
     const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; border-top: 5px solid #2ECC40;">
@@ -163,6 +197,8 @@ module.exports = {
     sendAbsentNotification,
     sendPaymentReminder,
     sendPaymentReceipt,
+    sendNewPaymentNotification,
+    sendOverduePaymentNotification,
     sendPaymentApprovedEmail,
     sendApprovalEmail,
     sendRejectionEmail

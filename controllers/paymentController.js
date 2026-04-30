@@ -8,31 +8,65 @@ const { createNotification } = require('./notificationController');
 const updateOverdueStatus = async () => {
     try {
         const now = new Date();
-        // Update payments that are 'pending' and past their due date to 'overdue'
-        const result = await Payment.updateMany(
-            {
-                status: 'pending',
-                dueDate: { $lt: now }
-            },
-            {
-                $set: { status: 'overdue' }
+        
+        // Find payments that are 'pending' and past their due date
+        const overduePayments = await Payment.find({
+            status: 'pending',
+            dueDate: { $lt: now }
+        }).populate('student');
+
+        if (overduePayments.length > 0) {
+            const overdueIds = overduePayments.map(p => p._id);
+            
+            // Update payments to 'overdue'
+            await Payment.updateMany(
+                { _id: { $in: overdueIds } },
+                { $set: { status: 'overdue' } }
+            );
+
+            // Notify each student
+            for (const payment of overduePayments) {
+                if (payment.student) {
+                    await emailService.sendOverduePaymentNotification(payment.student, payment);
+                    await createNotification(
+                        payment.student._id,
+                        `Your payment for ${payment.type} is now overdue. Please settle it immediately.`,
+                        'error',
+                        payment._id,
+                        'Payment'
+                    );
+                }
             }
-        );
+        }
         
         // Also consider 'rejected' payments that are past their due date as 'overdue'?
-        // Actually, let's keep it simple for now and only update 'pending'.
-        // If we want to include rejected:
-        await Payment.updateMany(
-            {
-                status: 'rejected',
-                dueDate: { $lt: now }
-            },
-            {
-                $set: { status: 'overdue' }
-            }
-        );
+        const rejectedOverduePayments = await Payment.find({
+            status: 'rejected',
+            dueDate: { $lt: now }
+        }).populate('student');
 
-        return result;
+        if (rejectedOverduePayments.length > 0) {
+            const rejectedIds = rejectedOverduePayments.map(p => p._id);
+            await Payment.updateMany(
+                { _id: { $in: rejectedIds } },
+                { $set: { status: 'overdue' } }
+            );
+
+            for (const payment of rejectedOverduePayments) {
+                if (payment.student) {
+                    await emailService.sendOverduePaymentNotification(payment.student, payment);
+                    await createNotification(
+                        payment.student._id,
+                        `Your previously rejected payment for ${payment.type} is now overdue. Please settle it immediately.`,
+                        'error',
+                        payment._id,
+                        'Payment'
+                    );
+                }
+            }
+        }
+
+        return { overdueCount: overduePayments.length + rejectedOverduePayments.length };
     } catch (error) {
         console.error('Error updating overdue status:', error);
     }
@@ -88,10 +122,18 @@ const createPayment = async (req, res) => {
         });
 
         res.status(201).json(payment);
+        
+        // Notify student immediately
+        await emailService.sendNewPaymentNotification(studentUser, payment);
+        await createNotification(
+            studentUser._id,
+            `A new payment of ₱${amount} for ${type} has been assigned to you.`,
+            'info',
+            payment._id,
+            'Payment'
+        );
 
         // Log payment creation
-        // Note: req.user might be undefined if this is an admin action on behalf of someone else, 
-        // need to check if we have req.user from middleware
         const actorId = req.user ? req.user.id : student;
         await logAction(actorId, 'CREATE_PAYMENT', `Created payment of ${amount} for student ${studentUser.email}`, req);
     } catch (error) {
@@ -276,6 +318,16 @@ const createBulkPayment = async (req, res) => {
 
             await payment.save();
             createdPayments.push(payment);
+
+            // Notify student immediately
+            await emailService.sendNewPaymentNotification(studentUser, payment);
+            await createNotification(
+                studentUser._id,
+                `A new payment of ₱${amount} for ${type || 'rent'} has been assigned to you.`,
+                'info',
+                payment._id,
+                'Payment'
+            );
 
             // Log action
             await logAction(req.user ? req.user.id : studentId, 'CREATE_PAYMENT', `Created payment of ${amount} for student ${studentUser.email} (Bulk)`, req);
