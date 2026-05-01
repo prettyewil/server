@@ -86,17 +86,30 @@ const runAbsenteeCheck = async () => {
 const runPaymentReminder = async () => {
     console.log('[Cron] Running Payment Reminder...');
     try {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+        // Due dates are entered in PH time (UTC+8) but stored in MongoDB as UTC.
+        // e.g., a due date of "May 2" (PH) is stored as "May 1 16:00 UTC".
+        // We must shift our query window by +8 hours to match correctly.
+        const PH_OFFSET_MS = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
 
-        const tomorrowEnd = new Date(tomorrow);
-        tomorrowEnd.setHours(23, 59, 59, 999);
+        const nowUTC = new Date();
 
-        // Find pending or rejected payments due tomorrow
+        // "Tomorrow" start in PH time = midnight PH tomorrow = UTC tomorrow 00:00 - 8h = UTC today 16:00
+        const tomorrowStartPH = new Date(nowUTC);
+        tomorrowStartPH.setUTCDate(tomorrowStartPH.getUTCDate() + 1);
+        tomorrowStartPH.setUTCHours(0, 0, 0, 0);
+        const tomorrowStartUTC = new Date(tomorrowStartPH.getTime() - PH_OFFSET_MS);
+
+        // "Tomorrow" end in PH time = 23:59:59 PH tomorrow = UTC tomorrow 23:59:59 - 8h = UTC tomorrow 15:59:59
+        const tomorrowEndPH = new Date(tomorrowStartPH);
+        tomorrowEndPH.setUTCHours(23, 59, 59, 999);
+        const tomorrowEndUTC = new Date(tomorrowEndPH.getTime() - PH_OFFSET_MS);
+
+        console.log(`[Cron] Payment Reminder: searching for due dates between ${tomorrowStartUTC.toISOString()} and ${tomorrowEndUTC.toISOString()}`);
+
+        // Find pending or rejected payments due tomorrow (in PH time)
         const payments = await Payment.find({
             status: { $in: ['pending', 'rejected'] },
-            dueDate: { $gte: tomorrow, $lte: tomorrowEnd }
+            dueDate: { $gte: tomorrowStartUTC, $lte: tomorrowEndUTC }
         }).populate('student');
 
         let sentCount = 0;
